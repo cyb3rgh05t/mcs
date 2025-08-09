@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCS - Mobile Car Service | Termin buchen</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-left">
+          <div class="user-icon">
+            <i class="fas fa-user"></i>
+          </div>
+          <span class="nav-text">Terminbuchung</span>
+        </div>
+
+        <div class="nav-center">
+          <div class="logo">
+            <div class="logo-circle">
+              <i class="fas fa-car"></i>
+              <div class="logo-text">MCS</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-right">
+          <a href="#" class="nav-link">START</a>
+          <a href="#" class="nav-link">LEISTUNGEN & PREISE</a>
+          <a href="#" class="nav-link">FAQ</a>
+          <a href="#" class="nav-link">ÜBER UNS</a>
+          <a href="#" class="nav-link">KONTAKT</a>
+          <button class="btn-primary">JETZT BUCHEN</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Background Image Upload -->
+    <div class="background-controls">
+      <input
+        type="file"
+        id="background-upload"
+        accept="image/*"
+        style="display: none"
+      />
+      <button
+        class="btn-secondary"
+        onclick="backgroundManager.uploadBackground()"
+      >
+        <i class="fas fa-image"></i> Hintergrund ändern
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+      <div class="booking-card">
+        <!-- Header -->
+        <div class="header-section">
+          <h1 class="main-title">MOBILE CAR SERVICE</h1>
+          <h2 class="sub-title">TERMIN BUCHEN</h2>
+          <p class="description">
+            Wir bringen unseren Service direkt zu Ihnen - ob zu Hause, im Büro
+            oder auf dem Parkplatz. Buchen Sie jetzt Ihren Wunschtermin!
+          </p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="progress-container">
+          <div class="progress-step active" data-step="1">
+            <div class="step-number">1</div>
+            <div class="step-label">Datum & Zeit</div>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="2">
+            <div class="step-number">2</div>
+            <div class="step-label">Services</div>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="3">
+            <div class="step-number">3</div>
+            <div class="step-label">Ihre Daten</div>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="4">
+            <div class="step-number">4</div>
+            <div class="step-label">Bestätigung</div>
+          </div>
+        </div>
+
+        <!-- Step 1: Date & Time Selection -->
+        <div class="step-content active" id="step1">
+          <h3 class="step-title">
+            <i class="fas fa-calendar-alt"></i>
+            Wählen Sie Datum und Uhrzeit
+          </h3>
+
+          <div class="calendar-container">
+            <div class="calendar-grid" id="calendar"></div>
+          </div>
+
+          <div class="time-selection" id="time-slots" style="display: none">
+            <h4>Verfügbare Uhrzeiten:</h4>
+            <div class="time-grid" id="time-grid"></div>
+          </div>
+
+          <div class="step-navigation">
+            <button
+              class="btn-primary"
+              id="step1-next"
+              disabled
+              onclick="bookingFlow.nextStep(2)"
+            >
+              Weiter zu Services <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Service Selection -->
+        <div class="step-content" id="step2">
+          <h3 class="step-title">
+            <i class="fas fa-tools"></i>
+            Wählen Sie Ihre Services
+          </h3>
+
+          <div class="services-grid" id="services-grid"></div>
+
+          <div class="step-navigation">
+            <button class="btn-secondary" onclick="bookingFlow.previousStep(1)">
+              <i class="fas fa-arrow-left"></i> Zurück
+            </button>
+            <button class="btn-primary" onclick="bookingFlow.nextStep(3)">
+              Weiter zu Ihren Daten <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Customer Data -->
+        <div class="step-content" id="step3">
+          <h3 class="step-title">
+            <i class="fas fa-user-edit"></i>
+            Ihre Kontaktdaten
+          </h3>
+
+          <form class="customer-form" id="customer-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="firstName">Vorname *</label>
+                <input type="text" id="firstName" name="firstName" required />
+              </div>
+              <div class="form-group">
+                <label for="lastName">Nachname *</label>
+                <input type="text" id="lastName" name="lastName" required />
+              </div>
+              <div class="form-group">
+                <label for="email">E-Mail *</label>
+                <input type="email" id="email" name="email" required />
+              </div>
+              <div class="form-group">
+                <label for="phone">Telefon *</label>
+                <input type="tel" id="phone" name="phone" required />
+              </div>
+              <div class="form-group full-width">
+                <label for="street">Straße & Hausnummer *</label>
+                <input type="text" id="street" name="street" required />
+              </div>
+              <div class="form-group">
+                <label for="zip">PLZ *</label>
+                <input type="text" id="zip" name="zip" required />
+              </div>
+              <div class="form-group">
+                <label for="city">Stadt *</label>
+                <input type="text" id="city" name="city" required />
+              </div>
+              <div class="form-group full-width">
+                <label for="notes">Anmerkungen</label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  placeholder="Besondere Wünsche, Zufahrt, etc."
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="distance-info" id="distance-info" style="display: none">
+              <div class="distance-card">
+                <i class="fas fa-route"></i>
+                <div class="distance-details">
+                  <h4>Entfernung berechnet</h4>
+                  <p>Entfernung: <span id="distance-km">0</span> km</p>
+                  <p>Anfahrtspauschale: <span id="travel-cost">0</span>€</p>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="step-navigation">
+            <button class="btn-secondary" onclick="bookingFlow.previousStep(2)">
+              <i class="fas fa-arrow-left"></i> Zurück
+            </button>
+            <button
+              class="btn-primary"
+              id="step3-next"
+              onclick="bookingFlow.nextStep(4)"
+            >
+              Zur Buchungsübersicht <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 4: Confirmation -->
+        <div class="step-content" id="step4">
+          <h3 class="step-title">
+            <i class="fas fa-check-circle"></i>
+            Buchungsübersicht
+          </h3>
+
+          <div class="booking-summary" id="booking-summary"></div>
+
+          <div class="step-navigation">
+            <button class="btn-secondary" onclick="bookingFlow.previousStep(3)">
+              <i class="fas fa-arrow-left"></i> Zurück
+            </button>
+            <button
+              class="btn-primary confirm-btn"
+              onclick="bookingFlow.confirmBooking()"
+            >
+              <i class="fas fa-calendar-check"></i> Buchung bestätigen
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 5: Success -->
+        <div class="step-content" id="step5">
+          <div class="success-message">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h3>Buchung erfolgreich!</h3>
+            <p>
+              Ihre Buchung wurde erfolgreich gespeichert. Sie erhalten in Kürze
+              eine Bestätigungsmail mit allen Details.
+            </p>
+            <div class="booking-number">
+              Buchungsnummer: <strong id="booking-number"></strong>
+            </div>
+          </div>
+
+          <div class="step-navigation">
+            <button class="btn-primary" onclick="bookingFlow.newBooking()">
+              <i class="fas fa-plus"></i> Neue Buchung
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/services.js"></script>
+    <script src="js/maps.js"></script>
+    <script src="js/booking.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
