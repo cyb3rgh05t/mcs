@@ -1,6 +1,6 @@
 /**
- * Mobile Car Service - Buchungslogik
- * Verwaltet den kompletten Buchungsprozess
+ * booking.js - KOMPLETT KORRIGIERTE VERSION mit Toast-Integration
+ * Diese Version behebt alle Fehler und fügt Toast-Funktionalität hinzu
  */
 
 class BookingFlow {
@@ -123,7 +123,7 @@ class BookingFlow {
   }
 
   /**
-   * Datum auswählen
+   * Datum auswählen - MIT TOAST
    */
   selectDate(dateString, element) {
     // Vorherige Auswahl entfernen
@@ -135,6 +135,15 @@ class BookingFlow {
     element.classList.add("selected");
     this.currentBooking.date = dateString;
 
+    // Toast mit formatiertem Datum
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString("de-DE", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    toast.info(`Datum gewählt: ${formattedDate}`);
+
     // Zeitslots für das gewählte Datum generieren
     this.generateTimeSlots(dateString);
 
@@ -144,7 +153,6 @@ class BookingFlow {
       timeSlots.style.display = "block";
     }
 
-    // Schritt validieren
     this.validateCurrentStep();
   }
 
@@ -181,7 +189,7 @@ class BookingFlow {
   }
 
   /**
-   * Uhrzeit auswählen
+   * Uhrzeit auswählen - MIT TOAST
    */
   selectTime(timeString, element) {
     document
@@ -190,6 +198,9 @@ class BookingFlow {
 
     element.classList.add("selected");
     this.currentBooking.time = timeString;
+
+    // Toast für gewählte Zeit
+    toast.success(`Uhrzeit gewählt: ${timeString} Uhr`);
 
     this.validateCurrentStep();
   }
@@ -236,7 +247,7 @@ class BookingFlow {
   }
 
   /**
-   * Service auswählen/abwählen
+   * Service auswählen/abwählen - MIT TOAST
    */
   toggleService(service, element) {
     const index = this.currentBooking.services.findIndex(
@@ -246,9 +257,11 @@ class BookingFlow {
     if (index > -1) {
       this.currentBooking.services.splice(index, 1);
       element.classList.remove("selected");
+      toast.info(`${service.name} entfernt`);
     } else {
       this.currentBooking.services.push(service);
       element.classList.add("selected");
+      toast.success(`${service.name} hinzugefügt`);
     }
 
     this.updateServicesSummary();
@@ -256,21 +269,27 @@ class BookingFlow {
   }
 
   /**
-   * Update Services Summary (optional UI enhancement)
+   * Update Services Summary
    */
   updateServicesSummary() {
     const selected = this.currentBooking.services;
     const totalPrice = selected.reduce((sum, s) => sum + s.price, 0);
     const totalDuration = selected.reduce((sum, s) => sum + s.duration, 0);
 
-    // Optional: Show live summary while selecting services
+    // Optional: Toast mit Summary bei mehr als 1 Service
+    if (selected.length > 1) {
+      toast.info(
+        `${selected.length} Services gewählt (${totalPrice}€, ${totalDuration} Min)`
+      );
+    }
+
     console.log(
       `Selected: ${selected.length} services, ${totalPrice}€, ${totalDuration} min`
     );
   }
 
   /**
-   * Validiert Kundendaten
+   * Validiert Kundendaten - MIT LOADING TOAST
    */
   async validateCustomerData() {
     const form = document.getElementById("customer-form");
@@ -283,18 +302,32 @@ class BookingFlow {
       customer[key] = value.trim();
     }
 
-    // Basis-Validierung
     const validation = this.validateCustomerForm(customer);
 
     if (validation.valid) {
       this.currentBooking.customer = customer;
 
-      // Entfernung berechnen
+      // Loading-Toast für Entfernungsberechnung
+      const loadingToast = toast.loading("Entfernung wird berechnet...");
+
       try {
         await this.calculateDistance(customer);
         this.enableStep3Next();
+
+        // Loading zu Success umwandeln
+        toast.loadingToSuccess(
+          loadingToast.id,
+          "Entfernung erfolgreich berechnet"
+        );
       } catch (error) {
         console.error("Fehler bei der Entfernungsberechnung:", error);
+
+        // Loading zu Error umwandeln
+        toast.loadingToError(
+          loadingToast.id,
+          "Entfernung konnte nicht berechnet werden"
+        );
+
         this.showDistanceError();
       }
     } else {
@@ -399,45 +432,24 @@ class BookingFlow {
   }
 
   /**
-   * Zeigt Loading State für Entfernungsberechnung
+   * Zeigt Entfernungs-Berechnung Loading
    */
   showDistanceCalculating() {
-    const distanceInfo = document.getElementById("distance-info");
-    if (distanceInfo) {
-      distanceInfo.innerHTML = `
-                <div class="distance-card calculating">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <div class="distance-details">
-                        <h4>Entfernung wird berechnet...</h4>
-                        <p>Bitte warten Sie einen Moment</p>
-                    </div>
-                </div>
-            `;
-      distanceInfo.style.display = "block";
-    }
+    // Optional: Loading-Animation anzeigen
+    console.log("Entfernung wird berechnet...");
   }
 
   /**
-   * Zeigt Entfernungsfehler
+   * Zeigt Distanz-Fehler
    */
   showDistanceError() {
-    const distanceInfo = document.getElementById("distance-info");
-    if (distanceInfo) {
-      distanceInfo.innerHTML = `
-                <div class="distance-card error">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <div class="distance-details">
-                        <h4>Entfernung konnte nicht berechnet werden</h4>
-                        <p>Bitte überprüfen Sie Ihre Adresse</p>
-                    </div>
-                </div>
-            `;
-      distanceInfo.style.display = "block";
-    }
+    toast.error(
+      "Entfernung konnte nicht berechnet werden. Bitte überprüfen Sie die Adresse."
+    );
   }
 
   /**
-   * Step 3 Next Button aktivieren
+   * Aktiviert Step 3 Next Button
    */
   enableStep3Next() {
     const button = document.getElementById("step3-next");
@@ -447,7 +459,7 @@ class BookingFlow {
   }
 
   /**
-   * Step 3 Next Button deaktivieren
+   * Deaktiviert Step 3 Next Button
    */
   disableStep3Next() {
     const button = document.getElementById("step3-next");
@@ -460,46 +472,32 @@ class BookingFlow {
    * Generiert Buchungsübersicht
    */
   generateBookingSummary() {
-    const summary = document.getElementById("booking-summary");
-    if (!summary) return;
+    const summaryContainer = document.getElementById("booking-summary");
+    if (!summaryContainer) return;
 
-    const selectedDate = new Date(this.currentBooking.date);
-    const formattedDate = selectedDate.toLocaleDateString("de-DE", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    const serviceTotal = this.currentBooking.services.reduce(
+      (sum, service) => sum + service.price,
+      0
+    );
+    const totalPrice = serviceTotal + this.currentBooking.travelCost;
 
-    let totalPrice = this.currentBooking.travelCost;
-    let totalDuration = 0;
-
-    this.currentBooking.services.forEach((service) => {
-      totalPrice += service.price;
-      totalDuration += service.duration;
-    });
-
-    this.currentBooking.totalPrice = totalPrice;
-
-    summary.innerHTML = `
+    summaryContainer.innerHTML = `
             <div class="summary-section">
-                <h4><i class="fas fa-calendar"></i> Termindetails</h4>
+                <h4><i class="fas fa-calendar"></i> Termin</h4>
                 <div class="summary-item">
                     <span>Datum:</span>
-                    <span>${formattedDate}</span>
+                    <span>${new Date(
+                      this.currentBooking.date
+                    ).toLocaleDateString("de-DE")}</span>
                 </div>
                 <div class="summary-item">
                     <span>Uhrzeit:</span>
                     <span>${this.currentBooking.time} Uhr</span>
                 </div>
-                <div class="summary-item">
-                    <span>Geschätzte Dauer:</span>
-                    <span>${totalDuration} Minuten</span>
-                </div>
             </div>
 
             <div class="summary-section">
-                <h4><i class="fas fa-user"></i> Kundeninformationen</h4>
+                <h4><i class="fas fa-user"></i> Kunde</h4>
                 <div class="summary-item">
                     <span>Name:</span>
                     <span>${this.currentBooking.customer.firstName} ${
@@ -523,12 +521,12 @@ class BookingFlow {
             </div>
 
             <div class="summary-section">
-                <h4><i class="fas fa-tools"></i> Gewählte Services</h4>
+                <h4><i class="fas fa-tools"></i> Services</h4>
                 ${this.currentBooking.services
                   .map(
                     (service) => `
                     <div class="summary-item">
-                        <span>${service.name} (${service.duration} Min)</span>
+                        <span>${service.name}</span>
                         <span>${service.price}€</span>
                     </div>
                 `
@@ -558,20 +556,33 @@ class BookingFlow {
   }
 
   /**
-   * Navigation zwischen Schritten
+   * Navigation zwischen Schritten - KORRIGIERT
    */
-  nextStep(stepNumber) {
+  nextStep(targetStep) {
     if (!this.validateCurrentStep()) {
       this.showValidationErrors();
       return;
     }
 
-    this.currentStep = stepNumber;
-    this.showStep(stepNumber);
-    this.updateProgress(stepNumber);
+    // Toast für Schritt-Wechsel
+    const stepNames = {
+      1: "Datum & Zeit",
+      2: "Services",
+      3: "Kundendaten",
+      4: "Buchungsübersicht",
+      5: "Bestätigung",
+    };
+
+    if (targetStep <= this.maxStep && targetStep > this.currentStep) {
+      toast.success(`Weiter zu: ${stepNames[targetStep]}`);
+    }
+
+    this.currentStep = targetStep;
+    this.showStep(targetStep);
+    this.updateProgress(targetStep);
 
     // Spezielle Aktionen für bestimmte Schritte
-    if (stepNumber === 4) {
+    if (targetStep === 4) {
       this.generateBookingSummary();
     }
   }
@@ -579,10 +590,10 @@ class BookingFlow {
   /**
    * Vorheriger Schritt
    */
-  previousStep(stepNumber) {
-    this.currentStep = stepNumber;
-    this.showStep(stepNumber);
-    this.updateProgress(stepNumber);
+  previousStep(targetStep) {
+    this.currentStep = targetStep;
+    this.showStep(targetStep);
+    this.updateProgress(targetStep);
   }
 
   /**
@@ -592,12 +603,12 @@ class BookingFlow {
     // Alle Schritte ausblenden
     document
       .querySelectorAll(".step-content")
-      .forEach((step) => step.classList.remove("active"));
+      .forEach((stepEl) => stepEl.classList.remove("active"));
 
     // Gewählten Schritt anzeigen
-    const step = document.getElementById(`step${stepNumber}`);
-    if (step) {
-      step.classList.add("active");
+    const stepElement = document.getElementById(`step${stepNumber}`);
+    if (stepElement) {
+      stepElement.classList.add("active");
     }
   }
 
@@ -605,14 +616,14 @@ class BookingFlow {
    * Aktualisiert Progress-Anzeige
    */
   updateProgress(currentStep) {
-    document.querySelectorAll(".progress-step").forEach((step, index) => {
+    document.querySelectorAll(".progress-step").forEach((stepEl, index) => {
       const stepNumber = index + 1;
-      step.classList.remove("active", "completed");
+      stepEl.classList.remove("active", "completed");
 
       if (stepNumber < currentStep) {
-        step.classList.add("completed");
+        stepEl.classList.add("completed");
       } else if (stepNumber === currentStep) {
-        step.classList.add("active");
+        stepEl.classList.add("active");
       }
     });
   }
@@ -653,25 +664,42 @@ class BookingFlow {
   }
 
   /**
-   * Zeigt Validierungsfehler
+   * Zeigt Validierungsfehler - MIT TOAST
    */
   showValidationErrors() {
-    // Implementiere spezifische Fehlermeldungen basierend auf aktuellem Schritt
-    console.warn(`Validierung für Schritt ${this.currentStep} fehlgeschlagen`);
+    const stepMessages = {
+      1: "Bitte wählen Sie Datum und Uhrzeit",
+      2: "Bitte wählen Sie mindestens einen Service",
+      3: "Bitte füllen Sie alle Kundendaten aus",
+      4: "Buchungsübersicht ist unvollständig",
+    };
+
+    const message =
+      stepMessages[this.currentStep] || "Bitte überprüfen Sie Ihre Eingaben";
+    toast.warning(message);
   }
 
   /**
-   * Buchung bestätigen
+   * Buchung bestätigen - MIT LOADING TOAST
    */
   async confirmBooking() {
+    // Loading-Toast starten
+    const loadingToast = toast.loading("Buchung wird verarbeitet...");
+
     try {
       // Finale Validierung
       if (!this.validateBooking()) {
         throw new Error("Buchungsdaten sind unvollständig");
       }
 
+      // Update Loading-Message
+      toast.updateLoading(loadingToast.id, "Kunde wird gespeichert...");
+
       // Kunde speichern
       const savedCustomer = db.saveCustomer(this.currentBooking.customer);
+
+      // Update Loading-Message
+      toast.updateLoading(loadingToast.id, "Buchung wird erstellt...");
 
       // Buchung vorbereiten
       const booking = {
@@ -694,13 +722,26 @@ class BookingFlow {
         bookingNumberElement.textContent = savedBooking.id;
       }
 
+      // Loading zu Success umwandeln
+      toast.loadingToSuccess(
+        loadingToast.id,
+        `🎉 Buchung ${savedBooking.id} erfolgreich erstellt!`
+      );
+
       // Erfolgsseite anzeigen
       this.nextStep(5);
 
-      // Optional: Analytics oder Tracking
+      // Tracking
       this.trackBookingSuccess(savedBooking);
     } catch (error) {
       console.error("Fehler bei der Buchungsbestätigung:", error);
+
+      // Loading zu Error umwandeln
+      toast.loadingToError(
+        loadingToast.id,
+        `Fehler bei der Buchung: ${error.message}`
+      );
+
       this.showBookingError(error.message);
     }
   }
@@ -719,10 +760,10 @@ class BookingFlow {
   }
 
   /**
-   * Zeigt Buchungsfehler
+   * Zeigt Buchungsfehler - MIT TOAST
    */
   showBookingError(message) {
-    alert(`Fehler bei der Buchung: ${message}`);
+    toast.error(`Fehler bei der Buchung: ${message}`);
   }
 
   /**
@@ -734,7 +775,7 @@ class BookingFlow {
   }
 
   /**
-   * Neue Buchung starten
+   * Neue Buchung starten - MIT TOAST
    */
   newBooking() {
     // Reset
@@ -757,6 +798,9 @@ class BookingFlow {
     // Zurück zu Schritt 1
     this.showStep(1);
     this.updateProgress(1);
+
+    // Toast für neue Buchung
+    toast.info("Neue Buchung gestartet");
   }
 
   /**

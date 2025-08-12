@@ -14,8 +14,10 @@ const CONFIG = {
   },
 
   // Preisberechnung
-  TRAVEL_COST_PER_KM: 1.5, // Euro pro Kilometer
-  FREE_DISTANCE_KM: 10, // Kostenlose Kilometer
+  GOOGLE_MAPS_API_KEY: "dein-api-key-hier", // Optional
+  FREE_DISTANCE_KM: 10,
+  TRAVEL_COST_PER_KM: 1.5,
+  MAX_SERVICE_DISTANCE: 300,
 
   // Geschäftszeiten
   BUSINESS_HOURS: {

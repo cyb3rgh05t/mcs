@@ -1,13 +1,244 @@
-/**
- * Mobile Car Service - Hauptanwendung
- * Koordiniert alle Module und verwaltet die App
- */
+// ========================================
+// TOAST NOTIFICATION SYSTEM
+// ========================================
+
+class ToastManager {
+  constructor() {
+    this.toasts = [];
+    this.container = null;
+    this.init();
+  }
+
+  init() {
+    // Toast-Container erstellen
+    this.container = document.createElement("div");
+    this.container.className = "toast-container";
+    this.container.id = "toast-container";
+    document.body.appendChild(this.container);
+  }
+
+  /**
+   * Toast anzeigen
+   * @param {string} message - Nachricht
+   * @param {string} type - success, error, warning, info, loading
+   * @param {number} duration - Anzeigedauer in ms (0 = dauerhaft)
+   * @param {object} options - Zusätzliche Optionen
+   */
+  show(message, type = "info", duration = 5000, options = {}) {
+    const toast = this.createToast(message, type, duration, options);
+    this.addToast(toast);
+    return toast;
+  }
+
+  /**
+   * Erfolgs-Toast
+   */
+  success(message, duration = 4000, options = {}) {
+    return this.show(message, "success", duration, options);
+  }
+
+  /**
+   * Fehler-Toast
+   */
+  error(message, duration = 6000, options = {}) {
+    return this.show(message, "error", duration, options);
+  }
+
+  /**
+   * Warnung-Toast
+   */
+  warning(message, duration = 5000, options = {}) {
+    return this.show(message, "warning", duration, options);
+  }
+
+  /**
+   * Info-Toast
+   */
+  info(message, duration = 4000, options = {}) {
+    return this.show(message, "info", duration, options);
+  }
+
+  /**
+   * Loading-Toast (dauerhaft bis manuell geschlossen)
+   */
+  loading(message = "Wird geladen...", options = {}) {
+    return this.show(message, "loading", 0, {
+      ...options,
+      showCloseButton: true,
+      icon: "fas fa-spinner fa-spin",
+    });
+  }
+
+  /**
+   * Toast erstellen
+   */
+  createToast(message, type, duration, options) {
+    const toastId =
+      "toast_" + Date.now() + Math.random().toString(36).substr(2, 9);
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.id = toastId;
+
+    // Icon bestimmen
+    const icons = {
+      success: "fas fa-check-circle",
+      error: "fas fa-exclamation-circle",
+      warning: "fas fa-exclamation-triangle",
+      info: "fas fa-info-circle",
+      loading: "fas fa-spinner fa-spin",
+    };
+
+    const icon = options.icon || icons[type] || icons.info;
+    const showCloseButton = options.showCloseButton !== false;
+    const showProgress = duration > 0 && options.showProgress !== false;
+
+    toast.innerHTML = `
+            <div class="toast-content">
+                <div class="toast-icon">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="toast-message">${message}</div>
+                ${
+                  showCloseButton
+                    ? '<button class="toast-close"><i class="fas fa-times"></i></button>'
+                    : ""
+                }
+            </div>
+            ${
+              showProgress
+                ? '<div class="toast-progress"><div class="toast-progress-bar"></div></div>'
+                : ""
+            }
+        `;
+
+    // Event Listeners
+    if (showCloseButton) {
+      const closeBtn = toast.querySelector(".toast-close");
+      closeBtn.addEventListener("click", () => this.remove(toastId));
+    }
+
+    // Click-to-dismiss (außer bei loading)
+    if (type !== "loading") {
+      toast.addEventListener("click", () => this.remove(toastId));
+    }
+
+    // Auto-remove nach duration
+    if (duration > 0) {
+      // Progress-Animation
+      if (showProgress) {
+        const progressBar = toast.querySelector(".toast-progress-bar");
+        setTimeout(() => {
+          if (progressBar) {
+            progressBar.style.animation = `toast-progress ${duration}ms linear`;
+          }
+        }, 100);
+      }
+
+      setTimeout(() => this.remove(toastId), duration);
+    }
+
+    return {
+      id: toastId,
+      element: toast,
+      type: type,
+      message: message,
+      duration: duration,
+    };
+  }
+
+  /**
+   * Toast zum Container hinzufügen
+   */
+  addToast(toast) {
+    this.toasts.push(toast);
+    this.container.appendChild(toast.element);
+
+    // Animation
+    setTimeout(() => {
+      toast.element.classList.add("toast-show");
+    }, 10);
+
+    // Maximal 5 Toasts gleichzeitig
+    if (this.toasts.length > 5) {
+      this.remove(this.toasts[0].id);
+    }
+  }
+
+  /**
+   * Toast entfernen
+   */
+  remove(toastId) {
+    const toastIndex = this.toasts.findIndex((t) => t.id === toastId);
+    if (toastIndex === -1) return;
+
+    const toast = this.toasts[toastIndex];
+
+    // Ausblend-Animation
+    toast.element.classList.remove("toast-show");
+    toast.element.classList.add("toast-hide");
+
+    setTimeout(() => {
+      if (toast.element.parentNode) {
+        toast.element.parentNode.removeChild(toast.element);
+      }
+      this.toasts.splice(toastIndex, 1);
+    }, 300);
+  }
+
+  /**
+   * Alle Toasts entfernen
+   */
+  clear() {
+    this.toasts.forEach((toast) => this.remove(toast.id));
+  }
+
+  /**
+   * Loading-Toast updaten
+   */
+  updateLoading(toastId, newMessage) {
+    const toast = this.toasts.find((t) => t.id === toastId);
+    if (toast) {
+      const messageEl = toast.element.querySelector(".toast-message");
+      if (messageEl) {
+        messageEl.textContent = newMessage;
+      }
+    }
+  }
+
+  /**
+   * Loading-Toast zu Success umwandeln
+   */
+  loadingToSuccess(toastId, message = "Erfolgreich abgeschlossen!") {
+    const toast = this.toasts.find((t) => t.id === toastId);
+    if (toast) {
+      this.remove(toastId);
+      this.success(message);
+    }
+  }
+
+  /**
+   * Loading-Toast zu Error umwandeln
+   */
+  loadingToError(toastId, message = "Ein Fehler ist aufgetreten") {
+    const toast = this.toasts.find((t) => t.id === toastId);
+    if (toast) {
+      this.remove(toastId);
+      this.error(message);
+    }
+  }
+}
+
+// ========================================
+// MOBILE CAR SERVICE APP
+// ========================================
 
 class MobileCarServiceApp {
   constructor() {
     this.isInitialized = false;
     this.modules = new Map();
     this.eventBus = new EventTarget();
+    this.toastManager = null;
 
     this.init();
   }
@@ -42,6 +273,9 @@ class MobileCarServiceApp {
       // Event Listeners setup
       this.setupEventListeners();
 
+      // Toast Manager initialisieren
+      this.toastManager = new ToastManager();
+
       // Background Manager initialisieren
       this.initBackgroundManager();
 
@@ -57,6 +291,9 @@ class MobileCarServiceApp {
       // Success Event
       this.emit("appReady", { timestamp: new Date().toISOString() });
 
+      // Toast zum App-Start
+      this.toastManager.success("🚗 Mobile Car Service erfolgreich gestartet!");
+
       console.log("✅ Mobile Car Service erfolgreich gestartet!");
 
       // Development Helper
@@ -65,6 +302,9 @@ class MobileCarServiceApp {
       }
     } catch (error) {
       console.error("❌ Fehler beim Starten der App:", error);
+      if (this.toastManager) {
+        this.toastManager.error("Fehler beim Starten der Anwendung");
+      }
       throw error;
     }
   }
@@ -129,6 +369,7 @@ class MobileCarServiceApp {
         document.body.style.backgroundPosition = "";
         document.body.style.backgroundAttachment = "";
         localStorage.removeItem("mcs_background");
+        this.toastManager.info("Hintergrundbild zurückgesetzt");
       },
 
       loadSavedBackground: () => {
@@ -161,16 +402,21 @@ class MobileCarServiceApp {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validierung
+    // Validierung mit Toast-Feedback
     if (file.size > CONFIG.UI.maxUploadSize) {
-      this.showNotification("error", CONFIG.MESSAGES.errors.uploadTooLarge);
+      this.toastManager.error("Datei ist zu groß (max. 5MB)");
       return;
     }
 
     if (!CONFIG.UI.supportedImageTypes.includes(file.type)) {
-      this.showNotification("error", CONFIG.MESSAGES.errors.unsupportedFormat);
+      this.toastManager.error("Unsupported Dateiformat");
       return;
     }
+
+    // Loading-Toast
+    const loadingToast = this.toastManager.loading(
+      "Hintergrundbild wird hochgeladen..."
+    );
 
     // Upload verarbeiten
     const reader = new FileReader();
@@ -185,14 +431,18 @@ class MobileCarServiceApp {
       // Speichern
       localStorage.setItem("mcs_background", backgroundUrl);
 
-      this.showNotification(
-        "success",
-        CONFIG.MESSAGES.success.backgroundUploaded
+      // Loading zu Success
+      this.toastManager.loadingToSuccess(
+        loadingToast.id,
+        "Hintergrundbild erfolgreich geändert"
       );
     };
 
     reader.onerror = () => {
-      this.showNotification("error", "Fehler beim Laden des Bildes");
+      this.toastManager.loadingToError(
+        loadingToast.id,
+        "Fehler beim Laden des Bildes"
+      );
     };
 
     reader.readAsDataURL(file);
@@ -229,6 +479,11 @@ class MobileCarServiceApp {
             limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024),
           }
         : null,
+      data: {
+        customers: window.db?.customers.length || 0,
+        bookings: window.db?.bookings.length || 0,
+        cacheSize: window.mapsService?.getCacheStats().cacheSize || 0,
+      },
     };
 
     console.table(metrics);
@@ -260,6 +515,63 @@ class MobileCarServiceApp {
       });
     });
   }
+
+  // ========================================
+  // TOAST INTEGRATION METHODEN
+  // ========================================
+
+  /**
+   * Toast anzeigen (neue Hauptmethode)
+   */
+  showToast(message, type = "info", duration = 5000, options = {}) {
+    return this.toastManager.show(message, type, duration, options);
+  }
+
+  /**
+   * Erfolgs-Toast
+   */
+  successToast(message, duration = 4000) {
+    return this.toastManager.success(message, duration);
+  }
+
+  /**
+   * Fehler-Toast
+   */
+  errorToast(message, duration = 6000) {
+    return this.toastManager.error(message, duration);
+  }
+
+  /**
+   * Warnung-Toast
+   */
+  warningToast(message, duration = 5000) {
+    return this.toastManager.warning(message, duration);
+  }
+
+  /**
+   * Info-Toast
+   */
+  infoToast(message, duration = 4000) {
+    return this.toastManager.info(message, duration);
+  }
+
+  /**
+   * Loading-Toast
+   */
+  loadingToast(message = "Wird geladen...") {
+    return this.toastManager.loading(message);
+  }
+
+  /**
+   * Die bestehende showNotification Methode erweitern mit Toast-System
+   */
+  showNotification(type, message, duration = 5000) {
+    return this.toastManager.show(message, type, duration);
+  }
+
+  // ========================================
+  // EVENT HANDLER (mit Toast-Integration)
+  // ========================================
 
   /**
    * Event Emitter
@@ -304,16 +616,15 @@ class MobileCarServiceApp {
   }
 
   /**
-   * Online/Offline Status Handler
+   * Online/Offline Status Handler mit Toast-Feedback
    */
   handleOnlineStatus(isOnline) {
-    const message = isOnline
-      ? "Internetverbindung wiederhergestellt"
-      : "Keine Internetverbindung";
+    if (isOnline) {
+      this.toastManager.success("Internetverbindung wiederhergestellt");
+    } else {
+      this.toastManager.warning("Keine Internetverbindung", 0); // Dauerhaft anzeigen
+    }
 
-    this.showNotification(isOnline ? "info" : "warning", message);
-
-    // Optional: Offline-Modus aktivieren
     if (!isOnline) {
       this.enableOfflineMode();
     }
@@ -324,6 +635,7 @@ class MobileCarServiceApp {
    */
   enableOfflineMode() {
     console.log("📴 Offline-Modus aktiviert");
+    this.toastManager.info("Offline-Modus aktiviert");
     // Hier könnten Offline-spezifische Features implementiert werden
   }
 
@@ -338,13 +650,19 @@ class MobileCarServiceApp {
   }
 
   /**
-   * Booking Complete Handler
+   * Booking Complete Handler mit Toast-Feedback
    */
   handleBookingComplete(event) {
     const booking = event.detail;
     console.log("🎉 Buchung abgeschlossen:", booking.id);
 
-    // Optional: Analytics, Notifications, etc.
+    // Erfolgs-Toast mit Buchungsnummer
+    this.toastManager.success(
+      `🎉 Buchung ${booking.id} erfolgreich erstellt!`,
+      6000
+    );
+
+    // Analytics Event
     this.trackEvent("booking_completed", {
       booking_id: booking.id,
       total_price: booking.totalPrice,
@@ -353,7 +671,7 @@ class MobileCarServiceApp {
   }
 
   /**
-   * Error Handler
+   * Error Handler mit Toast-Integration
    */
   handleError(error) {
     console.error("🚨 App Error:", error);
@@ -363,9 +681,8 @@ class MobileCarServiceApp {
       this.reportError(error);
     }
 
-    // User Notification
-    this.showNotification(
-      "error",
+    // User Notification mit Toast
+    this.toastManager.error(
       "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
     );
   }
@@ -403,42 +720,6 @@ class MobileCarServiceApp {
   }
 
   /**
-   * Zeigt Benachrichtigungen
-   */
-  showNotification(type, message, duration = 5000) {
-    // Einfache Notification Implementation
-    const notification = document.createElement("div");
-    notification.className = `notification ${type}`;
-    notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${
-              type === "error"
-                ? "#f44336"
-                : type === "success"
-                ? "#4caf50"
-                : "#2196f3"
-            };
-            color: white;
-            padding: 15px 20px;
-            border-radius: 5px;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease-out;
-        `;
-    notification.textContent = message;
-
-    document.body.appendChild(notification);
-
-    // Auto-remove
-    setTimeout(() => {
-      notification.style.animation = "slideOut 0.3s ease-in";
-      setTimeout(() => notification.remove(), 300);
-    }, duration);
-  }
-
-  /**
    * Event Tracking (für Analytics)
    */
   trackEvent(eventName, data) {
@@ -466,6 +747,7 @@ class MobileCarServiceApp {
       app: this,
       config: CONFIG,
       modules: this.modules,
+      toastManager: this.toastManager,
 
       // Hilfsfunktionen
       resetDatabase: () => window.db.resetDatabase(),
@@ -482,9 +764,24 @@ class MobileCarServiceApp {
       // UI Helpers
       resetBackground: () => this.backgroundManager.resetBackground(),
       showAllModules: () => console.table(Array.from(this.modules.entries())),
+
+      // Toast Testing
+      testToasts: () => {
+        toast.success("Test Success Toast");
+        setTimeout(() => toast.error("Test Error Toast"), 1000);
+        setTimeout(() => toast.warning("Test Warning Toast"), 2000);
+        setTimeout(() => toast.info("Test Info Toast"), 3000);
+        setTimeout(() => {
+          const loading = toast.loading("Test Loading Toast");
+          setTimeout(() => {
+            this.toastManager.loadingToSuccess(loading.id, "Test erfolgreich!");
+          }, 3000);
+        }, 4000);
+      },
     };
 
     console.log("🛠️ Development Tools verfügbar unter: window.MCS_DEBUG");
+    console.log("Toast-Tests: MCS_DEBUG.testToasts()");
     console.log("Beispiel: MCS_DEBUG.getStats()");
   }
 
@@ -513,6 +810,7 @@ class MobileCarServiceApp {
     };
 
     window.bookingFlow.setBookingData(testBooking);
+    this.toastManager.info("🧪 Test-Buchung simuliert");
     console.log("🧪 Test-Buchung simuliert");
   }
 
@@ -523,6 +821,7 @@ class MobileCarServiceApp {
     return {
       initialized: this.isInitialized,
       modules: Array.from(this.modules.keys()),
+      toastManager: !!this.toastManager,
       performance: {
         loadTime: performance.now(),
         memory: performance.memory
@@ -543,6 +842,11 @@ class MobileCarServiceApp {
   shutdown() {
     console.log("🛑 App wird heruntergefahren...");
 
+    // Toast alle schließen
+    if (this.toastManager) {
+      this.toastManager.clear();
+    }
+
     // Cleanup
     this.modules.clear();
 
@@ -555,7 +859,9 @@ class MobileCarServiceApp {
   }
 }
 
-// CSS für Notifications
+// ========================================
+// CSS FÜR NOTIFICATIONS (Legacy Support)
+// ========================================
 const notificationStyles = document.createElement("style");
 notificationStyles.textContent = `
     @keyframes slideIn {
@@ -575,13 +881,54 @@ notificationStyles.textContent = `
 `;
 document.head.appendChild(notificationStyles);
 
+// ========================================
+// APP INITIALISIERUNG
+// ========================================
+
 // App initialisieren
 const app = new MobileCarServiceApp();
 
 // Global verfügbar machen
 window.MCS_APP = app;
 
-// Export für Modules (falls verwendet)
+// ========================================
+// GLOBALE TOAST-FUNKTIONEN
+// ========================================
+window.toast = {
+  show: (message, type = "info", duration = 5000, options = {}) =>
+    window.MCS_APP?.toastManager?.show(message, type, duration, options),
+
+  success: (message, duration = 4000) =>
+    window.MCS_APP?.toastManager?.success(message, duration),
+
+  error: (message, duration = 6000) =>
+    window.MCS_APP?.toastManager?.error(message, duration),
+
+  warning: (message, duration = 5000) =>
+    window.MCS_APP?.toastManager?.warning(message, duration),
+
+  info: (message, duration = 4000) =>
+    window.MCS_APP?.toastManager?.info(message, duration),
+
+  loading: (message = "Wird geladen...") =>
+    window.MCS_APP?.toastManager?.loading(message),
+
+  // Zusätzliche Hilfsfunktionen
+  clear: () => window.MCS_APP?.toastManager?.clear(),
+
+  updateLoading: (id, message) =>
+    window.MCS_APP?.toastManager?.updateLoading(id, message),
+
+  loadingToSuccess: (id, message) =>
+    window.MCS_APP?.toastManager?.loadingToSuccess(id, message),
+
+  loadingToError: (id, message) =>
+    window.MCS_APP?.toastManager?.loadingToError(id, message),
+};
+
+// ========================================
+// MODULE EXPORT (falls verwendet)
+// ========================================
 if (typeof module !== "undefined" && module.exports) {
   module.exports = MobileCarServiceApp;
 }

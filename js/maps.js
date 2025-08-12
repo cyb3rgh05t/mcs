@@ -1,13 +1,53 @@
 /**
- * Mobile Car Service - Entfernungsberechnung
- * Simuliert Google Maps API für Entfernungsberechnungen
+ * Mobile Car Service - Echte Entfernungsberechnung
+ * Nutzt Google Maps API und OpenStreetMap als Fallback
  */
 
 class MapsService {
   constructor() {
-    this.companyAddress = CONFIG.COMPANY_ADDRESS;
-    this.cache = new Map(); // Cache für berechnete Entfernungen
+    this.companyAddress = {
+      street: "Industriestraße 15",
+      zip: "48431",
+      city: "Rheine",
+      coordinates: { lat: 52.2756, lng: 7.4383 },
+    };
+
+    this.cache = new Map();
+    this.apiKeys = {
+      google: CONFIG.GOOGLE_MAPS_API_KEY || null,
+      // Weitere API-Keys hier
+    };
+
+    this.rateLimits = {
+      google: { requests: 0, resetTime: 0, limit: 100 },
+      osm: { requests: 0, resetTime: 0, limit: 60 },
+    };
+
     this.loadCachedDistances();
+    this.initializeServices();
+  }
+
+  /**
+   * Initialisiert die verfügbaren Services
+   */
+  initializeServices() {
+    this.availableServices = [];
+
+    // Google Maps prüfen
+    if (this.apiKeys.google) {
+      this.availableServices.push("google");
+      console.log("✅ Google Maps API verfügbar");
+    }
+
+    // OpenStreetMap ist immer verfügbar (kostenlos)
+    this.availableServices.push("osm");
+    console.log("✅ OpenStreetMap API verfügbar");
+
+    if (this.availableServices.length === 0) {
+      console.warn(
+        "⚠️ Keine Mapping-Services verfügbar - nur PLZ-Schätzung möglich"
+      );
+    }
   }
 
   /**
@@ -19,9 +59,11 @@ class MapsService {
       if (cached) {
         const data = JSON.parse(cached);
         this.cache = new Map(data);
+        console.log(`📦 ${this.cache.size} gecachte Entfernungen geladen`);
       }
     } catch (error) {
       console.warn("Fehler beim Laden des Distance-Cache:", error);
+      this.cache = new Map();
     }
   }
 
@@ -42,27 +84,65 @@ class MapsService {
    */
   async calculateDistance(customerAddress) {
     try {
+      // Adresse validieren
+      const validation = this.validateAddress(customerAddress);
+      if (!validation.valid) {
+        throw new Error(`Ungültige Adresse: ${validation.errors.join(", ")}`);
+      }
+
       // Cache-Key erstellen
       const cacheKey = this.createCacheKey(customerAddress);
 
-      // Prüfe Cache
+      // Prüfe Cache (max 7 Tage alt)
       if (this.cache.has(cacheKey)) {
-        console.log("Entfernung aus Cache geladen");
-        return this.cache.get(cacheKey);
+        const cached = this.cache.get(cacheKey);
+        const cacheAge = Date.now() - cached.timestamp;
+        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 Tage
+
+        if (cacheAge < maxAge) {
+          console.log("📦 Entfernung aus Cache geladen");
+          return cached.result;
+        } else {
+          // Cache-Eintrag ist zu alt
+          this.cache.delete(cacheKey);
+        }
       }
 
-      // Neue Berechnung
-      const distance = await this.performDistanceCalculation(customerAddress);
+      // Neue Berechnung durchführen
+      const result = await this.performDistanceCalculation(customerAddress);
+
+      // Ergebnis validieren
+      if (
+        !result ||
+        typeof result.distance !== "number" ||
+        result.distance < 0
+      ) {
+        throw new Error("Ungültiges Berechnungsergebnis");
+      }
 
       // In Cache speichern
-      this.cache.set(cacheKey, distance);
+      this.cache.set(cacheKey, {
+        result: result,
+        timestamp: Date.now(),
+        address: customerAddress,
+      });
       this.saveCachedDistances();
 
-      return distance;
+      return result;
     } catch (error) {
       console.error("Fehler bei der Entfernungsberechnung:", error);
-      // Fallback: Geschätzte Entfernung basierend auf PLZ
-      return this.estimateDistanceByPostalCode(customerAddress.zip);
+
+      // Fallback: PLZ-basierte Schätzung als letzter Ausweg
+      const fallback = this.createFallbackResult(customerAddress);
+
+      // Warnung an User
+      if (window.toast) {
+        toast.warning(
+          `Entfernung geschätzt: ${fallback.distance}km (${error.message})`
+        );
+      }
+
+      return fallback;
     }
   }
 
@@ -72,284 +152,282 @@ class MapsService {
   createCacheKey(address) {
     return `${address.street}_${address.zip}_${address.city}`
       .toLowerCase()
-      .replace(/\s+/g, "_");
+      .replace(/[^a-z0-9_]/g, "_")
+      .replace(/_{2,}/g, "_");
   }
 
   /**
    * Führt die eigentliche Entfernungsberechnung durch
-   * In der Realität würde hier die Google Maps API aufgerufen
    */
   async performDistanceCalculation(customerAddress) {
-    // Simuliere API-Aufruf Delay
-    await this.delay(1000 + Math.random() * 2000);
+    const errors = [];
 
-    // Simulierte Entfernungsberechnung basierend auf bekannten Städten
-    const distance = this.simulateDistanceCalculation(customerAddress);
-
-    // Füge etwas Variation hinzu für Realismus
-    const variation = (Math.random() - 0.5) * 2; // ±1 km Variation
-    const finalDistance = Math.max(1, distance + variation);
-
-    return {
-      distance: Math.round(finalDistance * 10) / 10, // Eine Nachkommastelle
-      duration: this.estimateDrivingTime(finalDistance),
-      route: this.generateRoute(customerAddress),
-      calculatedAt: new Date().toISOString(),
-    };
-  }
-
-  /**
-   * Simuliert Entfernungsberechnung basierend auf bekannten Orten
-   */
-  simulateDistanceCalculation(customerAddress) {
-    const city = customerAddress.city.toLowerCase();
-    const zip = customerAddress.zip;
-
-    // Bekannte Entfernungen von Rheine (Firmensitz)
-    const knownDistances = {
-      // Direkte Nachbarn
-      rheine: this.getDistanceByPostalCode(zip, "48431"),
-      salzbergen: 8,
-      spelle: 12,
-      emsdetten: 15,
-      greven: 20,
-      steinfurt: 18,
-      neuenkirchen: 10,
-      wettringen: 14,
-
-      // Größere Städte in der Region
-      münster: 35,
-      osnabrück: 45,
-      enschede: 25,
-      nordhorn: 55,
-      coesfeld: 40,
-      ibbenbüren: 30,
-      lengerich: 25,
-      mettingen: 22,
-      hopsten: 20,
-      recke: 15,
-
-      // Weitere entfernte Städte
-      amsterdam: 180,
-      bremen: 150,
-      hannover: 160,
-      dortmund: 80,
-      düsseldorf: 120,
-      köln: 150,
-      hamburg: 250,
-      berlin: 450,
-      frankfurt: 280,
-      stuttgart: 400,
-    };
-
-    // Prüfe direkte Übereinstimmung
-    for (const [cityName, distance] of Object.entries(knownDistances)) {
-      if (city.includes(cityName) || cityName.includes(city)) {
-        return typeof distance === "number" ? distance : distance;
+    // Versuche Google Maps API zuerst (wenn verfügbar)
+    if (this.apiKeys.google && this.availableServices.includes("google")) {
+      try {
+        if (this.checkRateLimit("google")) {
+          const result = await this.calculateWithGoogleMaps(customerAddress);
+          return result;
+        }
+      } catch (error) {
+        console.warn("Google Maps API fehlgeschlagen:", error.message);
+        errors.push(`Google Maps: ${error.message}`);
       }
     }
 
-    // Fallback: Schätze basierend auf PLZ
-    return this.estimateDistanceByPostalCode(zip);
-  }
-
-  /**
-   * Schätzt Entfernung basierend auf Postleitzahl
-   */
-  estimateDistanceByPostalCode(customerZip) {
-    const companyZip = this.companyAddress.zip;
-    const zipDiff = Math.abs(parseInt(customerZip) - parseInt(companyZip));
-
-    // Grobe Schätzung: Pro 100 PLZ-Punkte ca. 10-15 km
-    let estimatedDistance = zipDiff * 0.12;
-
-    // Mindestens 2 km, höchstens 500 km
-    estimatedDistance = Math.max(2, Math.min(500, estimatedDistance));
-
-    return estimatedDistance;
-  }
-
-  /**
-   * Detaillierte Entfernungsberechnung basierend auf PLZ-Bereichen
-   */
-  getDistanceByPostalCode(customerZip, companyZip = "48431") {
-    const customer = parseInt(customerZip);
-    const company = parseInt(companyZip);
-
-    // PLZ-Bereiche und ihre ungefähren Entfernungen von Rheine (48431)
-    const plzDistances = {
-      // 48xxx (lokaler Bereich)
-      48400: 5, // Rheine direkt
-      48431: 0, // Firmensitz
-      48432: 3, // Rheine andere Teile
-      48455: 8, // Salzbergen
-      48480: 12, // Spelle
-      48485: 10, // Neuenkirchen
-      48496: 14, // Hopsten
-
-      // 49xxx (Osnabrück Region)
-      49000: 45, // Osnabrück
-      49082: 42, // Osnabrück
-      49124: 38, // Georgsmarienhütte
-      49479: 25, // Ibbenbüren
-      49525: 22, // Lengerich
-      49565: 18, // Bramsche
-
-      // 48xxx (weitere Münsterland)
-      48143: 35, // Münster
-      48149: 32, // Münster
-      48157: 30, // Münster
-      48167: 38, // Münster
-      48301: 15, // Nottuln
-      48317: 20, // Dülmen
-      48336: 18, // Sassenberg
-      48351: 25, // Everswinkel
-      48361: 15, // Beelen
-      48369: 12, // Saerbeck
-      48477: 15, // Hörstel
-      48599: 25, // Gronau
-
-      // 44xxx-47xxx (Ruhrgebiet)
-      44000: 90, // Dortmund
-      45000: 110, // Essen
-      46000: 130, // Düsseldorf
-      47000: 140, // Duisburg
-
-      // 50xxx-53xxx (Köln/Bonn)
-      50000: 150, // Köln
-      51000: 145, // Köln Umgebung
-      52000: 90, // Aachen
-      53000: 160, // Bonn
-
-      // Niederlande (NL Postcodes simuliert)
-      7500: 25, // Enschede
-      7600: 30, // Almelo
-    };
-
-    // Finde nächste bekannte PLZ
-    let closestDistance = 50; // Default
-    let minDiff = Infinity;
-
-    for (const [plz, distance] of Object.entries(plzDistances)) {
-      const diff = Math.abs(customer - parseInt(plz));
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestDistance = distance;
+    // Fallback: OpenStreetMap
+    if (this.availableServices.includes("osm")) {
+      try {
+        if (this.checkRateLimit("osm")) {
+          const result = await this.calculateWithOpenStreetMap(customerAddress);
+          return result;
+        }
+      } catch (error) {
+        console.warn("OpenStreetMap API fehlgeschlagen:", error.message);
+        errors.push(`OpenStreetMap: ${error.message}`);
       }
     }
 
-    // Füge Entfernung basierend auf PLZ-Differenz hinzu
-    const plzFactor = Math.min(minDiff / 100, 5); // Max 5km zusätzlich
-    return closestDistance + plzFactor;
+    // Alle APIs fehlgeschlagen
+    throw new Error(`Alle APIs fehlgeschlagen: ${errors.join("; ")}`);
   }
 
   /**
-   * Schätzt Fahrtzeit basierend auf Entfernung
+   * Google Maps Distance Matrix API
    */
-  estimateDrivingTime(distance) {
-    // Durchschnittsgeschwindigkeit variiert je nach Entfernung
-    let avgSpeed;
+  async calculateWithGoogleMaps(customerAddress) {
+    const origin = `${this.companyAddress.street}, ${this.companyAddress.zip} ${this.companyAddress.city}`;
+    const destination = `${customerAddress.street}, ${customerAddress.zip} ${customerAddress.city}`;
 
-    if (distance <= 10) {
-      avgSpeed = 35; // Stadtverkehr
-    } else if (distance <= 30) {
-      avgSpeed = 50; // Landstraße
-    } else if (distance <= 100) {
-      avgSpeed = 65; // Schnellstraße/Autobahn
-    } else {
-      avgSpeed = 80; // Autobahn
+    const url =
+      `https://maps.googleapis.com/maps/api/distancematrix/json?` +
+      `origins=${encodeURIComponent(origin)}&` +
+      `destinations=${encodeURIComponent(destination)}&` +
+      `units=metric&` +
+      `mode=driving&` +
+      `language=de&` +
+      `key=${this.apiKeys.google}`;
+
+    this.incrementRateLimit("google");
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const timeInHours = distance / avgSpeed;
-    const timeInMinutes = Math.round(timeInHours * 60);
+    const data = await response.json();
+
+    if (data.status !== "OK") {
+      throw new Error(
+        `API Status: ${data.status} - ${
+          data.error_message || "Unbekannter Fehler"
+        }`
+      );
+    }
+
+    const element = data.rows[0]?.elements[0];
+
+    if (!element || element.status !== "OK") {
+      throw new Error(
+        `Route nicht gefunden: ${element?.status || "Unbekannter Fehler"}`
+      );
+    }
+
+    const distanceKm = element.distance.value / 1000;
+    const durationMinutes = Math.round(element.duration.value / 60);
 
     return {
-      hours: Math.floor(timeInMinutes / 60),
-      minutes: timeInMinutes % 60,
-      totalMinutes: timeInMinutes,
+      distance: Math.round(distanceKm * 10) / 10,
+      duration: durationMinutes,
+      method: "google_maps",
+      raw: {
+        distance_text: element.distance.text,
+        duration_text: element.duration.text,
+        traffic: element.duration_in_traffic || null,
+      },
+      coordinates: {
+        origin: this.companyAddress.coordinates,
+        destination: await this.geocodeWithGoogle(customerAddress),
+      },
+      timestamp: Date.now(),
     };
   }
 
   /**
-   * Generiert eine simulierte Route
+   * OpenStreetMap + OSRM für Routing
    */
-  generateRoute(customerAddress) {
-    const distance = this.simulateDistanceCalculation(customerAddress);
+  async calculateWithOpenStreetMap(customerAddress) {
+    // 1. Geocoding für Zieladresse
+    const destinationCoords = await this.geocodeWithOSM(customerAddress);
+
+    // 2. Routing mit OSRM
+    const origin = this.companyAddress.coordinates;
+    const destination = destinationCoords;
+
+    const routeUrl =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${origin.lng},${origin.lat};${destination.lng},${destination.lat}` +
+      `?overview=false&steps=false&geometries=geojson`;
+
+    this.incrementRateLimit("osm");
+
+    const response = await fetch(routeUrl);
+
+    if (!response.ok) {
+      throw new Error(`OSRM HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.code !== "Ok") {
+      throw new Error(
+        `OSRM Error: ${data.code} - ${data.message || "Route nicht gefunden"}`
+      );
+    }
+
+    const route = data.routes[0];
+    const distanceKm = route.distance / 1000;
+    const durationMinutes = Math.round(route.duration / 60);
 
     return {
-      start: this.companyAddress,
-      end: customerAddress,
-      distance: distance,
-      duration: this.estimateDrivingTime(distance),
-      steps: this.generateRouteSteps(customerAddress, distance),
+      distance: Math.round(distanceKm * 10) / 10,
+      duration: durationMinutes,
+      method: "openstreetmap",
+      raw: {
+        distance_text: `${distanceKm.toFixed(1)} km`,
+        duration_text: `${durationMinutes} Min`,
+        confidence: destinationCoords.confidence || 0.8,
+      },
+      coordinates: {
+        origin: origin,
+        destination: destination,
+      },
+      timestamp: Date.now(),
     };
   }
 
   /**
-   * Generiert Routenschritte (simuliert)
+   * Geocoding mit Google Maps
    */
-  generateRouteSteps(customerAddress, totalDistance) {
-    const steps = [];
-    const city = customerAddress.city.toLowerCase();
+  async geocodeWithGoogle(address) {
+    const addressString = `${address.street}, ${address.zip} ${address.city}`;
+    const url =
+      `https://maps.googleapis.com/maps/api/geocode/json?` +
+      `address=${encodeURIComponent(addressString)}&` +
+      `language=de&` +
+      `key=${this.apiKeys.google}`;
 
-    // Grundroute von Rheine
-    steps.push({
-      instruction: "Starten Sie in Rheine, Industriestraße 15",
-      distance: 0,
-      duration: 0,
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status !== "OK" || !data.results[0]) {
+      throw new Error(`Geocoding fehlgeschlagen: ${data.status}`);
+    }
+
+    const location = data.results[0].geometry.location;
+    return {
+      lat: location.lat,
+      lng: location.lng,
+      confidence: 0.9,
+      formatted_address: data.results[0].formatted_address,
+    };
+  }
+
+  /**
+   * Geocoding mit OpenStreetMap Nominatim
+   */
+  async geocodeWithOSM(address) {
+    const addressString = `${address.street}, ${address.zip} ${address.city}, Deutschland`;
+    const url =
+      `https://nominatim.openstreetmap.org/search?` +
+      `q=${encodeURIComponent(addressString)}&` +
+      `format=json&` +
+      `limit=1&` +
+      `countrycodes=de&` +
+      `addressdetails=1`;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mobile-Car-Service/1.0",
+      },
     });
 
-    if (totalDistance > 5) {
-      if (city.includes("münster") || city.includes("emsdetten")) {
-        steps.push({
-          instruction: "Fahren Sie auf die B481 Richtung Münster",
-          distance: Math.round(totalDistance * 0.3),
-          duration: Math.round(((totalDistance * 0.3) / 50) * 60),
-        });
-      } else if (city.includes("osnabrück") || city.includes("ibbenbüren")) {
-        steps.push({
-          instruction: "Fahren Sie auf die A30 Richtung Osnabrück",
-          distance: Math.round(totalDistance * 0.4),
-          duration: Math.round(((totalDistance * 0.4) / 70) * 60),
-        });
-      } else if (city.includes("steinfurt") || city.includes("burgsteinfurt")) {
-        steps.push({
-          instruction: "Fahren Sie auf die B54 Richtung Steinfurt",
-          distance: Math.round(totalDistance * 0.6),
-          duration: Math.round(((totalDistance * 0.6) / 50) * 60),
-        });
-      }
+    if (!response.ok) {
+      throw new Error(`Nominatim HTTP ${response.status}`);
     }
 
-    if (totalDistance > 15) {
-      steps.push({
-        instruction: `Folgen Sie der Beschilderung nach ${customerAddress.city}`,
-        distance: Math.round(totalDistance * 0.7),
-        duration: Math.round(((totalDistance * 0.7) / 55) * 60),
-      });
+    const data = await response.json();
+
+    if (!data || data.length === 0) {
+      throw new Error("Adresse nicht gefunden");
     }
 
-    steps.push({
-      instruction: `Ankunft: ${customerAddress.street}, ${customerAddress.zip} ${customerAddress.city}`,
-      distance: totalDistance,
-      duration: this.estimateDrivingTime(totalDistance).totalMinutes,
-    });
+    const result = data[0];
 
-    return steps;
+    // Confidence basierend auf Übereinstimmung
+    let confidence = 0.5;
+    if (result.address) {
+      if (result.address.postcode === address.zip) confidence += 0.2;
+      if (
+        result.address.city === address.city ||
+        result.address.town === address.city
+      )
+        confidence += 0.2;
+      if (result.address.house_number) confidence += 0.1;
+    }
+
+    return {
+      lat: parseFloat(result.lat),
+      lng: parseFloat(result.lon),
+      confidence: confidence,
+      formatted_address: result.display_name,
+    };
+  }
+
+  /**
+   * Rate Limiting prüfen
+   */
+  checkRateLimit(service) {
+    const limit = this.rateLimits[service];
+    const now = Date.now();
+
+    // Reset alle 60 Minuten
+    if (now - limit.resetTime > 60 * 60 * 1000) {
+      limit.requests = 0;
+      limit.resetTime = now;
+    }
+
+    if (limit.requests >= limit.limit) {
+      console.warn(`Rate limit erreicht für ${service}`);
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Rate Limit Counter erhöhen
+   */
+  incrementRateLimit(service) {
+    this.rateLimits[service].requests++;
   }
 
   /**
    * Berechnet Anfahrtskosten basierend auf Entfernung
    */
   calculateTravelCost(distance) {
-    const freeDistance = CONFIG.FREE_DISTANCE_KM;
-    const costPerKm = CONFIG.TRAVEL_COST_PER_KM;
+    const freeDistance = CONFIG.FREE_DISTANCE_KM || 10;
+    const costPerKm = CONFIG.TRAVEL_COST_PER_KM || 1.5;
 
     if (distance <= freeDistance) {
       return {
+        distance: distance,
+        freeDistance: freeDistance,
+        chargeableDistance: 0,
+        costPerKm: costPerKm,
         cost: 0,
-        freeKm: distance,
-        chargeableKm: 0,
+        isFree: true,
         message: `Kostenlose Anfahrt (unter ${freeDistance}km)`,
       };
     }
@@ -358,10 +436,12 @@ class MapsService {
     const cost = chargeableDistance * costPerKm;
 
     return {
-      cost: Math.round(cost * 100) / 100, // 2 Nachkommastellen
-      freeKm: freeDistance,
-      chargeableKm: Math.round(chargeableDistance * 10) / 10,
+      distance: distance,
+      freeDistance: freeDistance,
+      chargeableDistance: Math.round(chargeableDistance * 10) / 10,
       costPerKm: costPerKm,
+      cost: Math.round(cost * 100) / 100,
+      isFree: false,
       message: `${chargeableDistance.toFixed(1)}km × ${costPerKm.toFixed(
         2
       )}€ = ${cost.toFixed(2)}€`,
@@ -374,12 +454,17 @@ class MapsService {
   validateAddress(address) {
     const errors = [];
 
-    if (!address.street || address.street.trim().length < 5) {
+    if (!address) {
+      errors.push("Adresse ist erforderlich");
+      return { valid: false, errors };
+    }
+
+    if (!address.street || address.street.trim().length < 3) {
       errors.push("Straße und Hausnummer sind erforderlich");
     }
 
-    if (!address.zip || !CONFIG.VALIDATION.zip.test(address.zip)) {
-      errors.push("Gültige PLZ ist erforderlich");
+    if (!address.zip || !/^[0-9]{5}$/.test(address.zip)) {
+      errors.push("Gültige 5-stellige PLZ ist erforderlich");
     }
 
     if (!address.city || address.city.trim().length < 2) {
@@ -393,61 +478,104 @@ class MapsService {
   }
 
   /**
+   * Erstellt Fallback-Result für PLZ-Schätzung
+   */
+  createFallbackResult(customerAddress) {
+    const distance = this.estimateDistanceByPostalCode(customerAddress.zip);
+    const duration = Math.round(distance * 1.5); // ~1.5 Min pro km
+
+    return {
+      distance: distance,
+      duration: duration,
+      method: "postal_code_estimate",
+      raw: {
+        distance_text: `~${distance} km`,
+        duration_text: `~${duration} Min`,
+        confidence: 0.3,
+      },
+      coordinates: {
+        origin: this.companyAddress.coordinates,
+        destination: this.estimateCoordinates(customerAddress),
+      },
+      isEstimate: true,
+      timestamp: Date.now(),
+    };
+  }
+
+  /**
+   * PLZ-basierte Entfernungsschätzung (als Fallback)
+   */
+  estimateDistanceByPostalCode(zip) {
+    const companyZip = parseInt(this.companyAddress.zip);
+    const customerZip = parseInt(zip);
+
+    // Bekannte PLZ-Bereiche und ihre ungefähren Entfernungen
+    const knownZipRanges = [
+      { min: 48400, max: 48499, baseDistance: 10 }, // Rheine-Umgebung
+      { min: 49400, max: 49499, baseDistance: 25 }, // Osnabrück-Bereich
+      { min: 48100, max: 48399, baseDistance: 35 }, // Münster-Bereich
+      { min: 26000, max: 26999, baseDistance: 150 }, // Oldenburg
+      { min: 30000, max: 39999, baseDistance: 160 }, // Hannover-Bereich
+      { min: 44000, max: 44999, baseDistance: 80 }, // Dortmund
+      { min: 40000, max: 49999, baseDistance: 100 }, // NRW-West
+      { min: 50000, max: 59999, baseDistance: 120 }, // Köln-Bereich
+    ];
+
+    // Finde passenden Bereich
+    for (const range of knownZipRanges) {
+      if (customerZip >= range.min && customerZip <= range.max) {
+        // Feintuning basierend auf PLZ-Differenz
+        const zipDiff = Math.abs(customerZip - companyZip);
+        const adjustment = Math.min(zipDiff / 1000, 10); // Max 10km Adjustment
+        return Math.round((range.baseDistance + adjustment) * 10) / 10;
+      }
+    }
+
+    // Fallback: Grobe Schätzung basierend auf PLZ-Differenz
+    const zipDiff = Math.abs(customerZip - companyZip);
+    return Math.min(Math.round(zipDiff / 10), 200); // Max 200km
+  }
+
+  /**
+   * Schätzt Koordinaten basierend auf PLZ
+   */
+  estimateCoordinates(address) {
+    const zip = parseInt(address.zip);
+
+    // Bekannte PLZ-Koordinaten (Zentren)
+    const zipCoordinates = {
+      48431: { lat: 52.2756, lng: 7.4383 }, // Rheine
+      48429: { lat: 52.2856, lng: 7.4283 }, // Rheine-Nord
+      48465: { lat: 52.1856, lng: 7.3683 }, // Neuenkirchen
+      49477: { lat: 52.2756, lng: 7.7383 }, // Ibbenbüren
+      48149: { lat: 51.9607, lng: 7.6261 }, // Münster
+    };
+
+    if (zipCoordinates[zip]) {
+      return { ...zipCoordinates[zip], confidence: 0.7 };
+    }
+
+    // Grobe Schätzung basierend auf PLZ-Bereich
+    const lat = 52.0 + (zip % 1000) / 1000;
+    const lng = 7.0 + (zip % 100) / 100;
+
+    return { lat, lng, confidence: 0.3 };
+  }
+
+  /**
    * Prüft ob die Adresse im Servicebereich liegt
    */
   isInServiceArea(distance) {
-    const maxDistance = 100; // 100km maximaler Servicebereich
+    const maxDistance = CONFIG.MAX_SERVICE_DISTANCE || 100;
 
     return {
       inArea: distance <= maxDistance,
       maxDistance,
+      distance,
       message:
         distance > maxDistance
           ? `Außerhalb unseres Servicebereichs (max. ${maxDistance}km)`
           : "Im Servicebereich",
-    };
-  }
-
-  /**
-   * Hilfsfunktion für Delays
-   */
-  delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Geocoding Simulation (Koordinaten aus Adresse)
-   */
-  async geocodeAddress(address) {
-    // Simulierte Koordinaten für bekannte Städte
-    const coordinates = {
-      rheine: { lat: 52.2756, lng: 7.4383 },
-      münster: { lat: 51.9607, lng: 7.6261 },
-      osnabrück: { lat: 52.2799, lng: 8.0472 },
-      steinfurt: { lat: 52.1482, lng: 7.3379 },
-      emsdetten: { lat: 52.1725, lng: 7.5289 },
-      ibbenbüren: { lat: 52.2766, lng: 7.7164 },
-      enschede: { lat: 52.2215, lng: 6.8937 },
-    };
-
-    const city = address.city.toLowerCase();
-
-    for (const [cityName, coords] of Object.entries(coordinates)) {
-      if (city.includes(cityName)) {
-        return {
-          ...coords,
-          address: `${address.street}, ${address.zip} ${address.city}`,
-          confidence: 0.9,
-        };
-      }
-    }
-
-    // Fallback: Geschätzte Koordinaten
-    return {
-      lat: 52.0 + Math.random() * 2,
-      lng: 7.0 + Math.random() * 2,
-      address: `${address.street}, ${address.zip} ${address.city}`,
-      confidence: 0.5,
     };
   }
 
@@ -457,9 +585,9 @@ class MapsService {
   getCacheStats() {
     return {
       cacheSize: this.cache.size,
-      cacheKeys: Array.from(this.cache.keys()),
-      oldestEntry: this.findOldestCacheEntry(),
-      cacheHitRate: this.calculateCacheHitRate(),
+      availableServices: this.availableServices,
+      rateLimits: this.rateLimits,
+      lastCleared: localStorage.getItem("mcs_cache_last_clear") || "Nie",
     };
   }
 
@@ -469,33 +597,47 @@ class MapsService {
   clearCache() {
     this.cache.clear();
     localStorage.removeItem("mcs_distance_cache");
-    console.log("Distance-Cache wurde geleert");
+    localStorage.setItem("mcs_cache_last_clear", new Date().toISOString());
+
+    if (window.toast) {
+      toast.success(`Cache geleert: Alle Entfernungen werden neu berechnet`);
+    }
+
+    console.log("🗑️ Distance-Cache wurde geleert");
   }
 
   /**
-   * Findet ältesten Cache-Eintrag
+   * Service-Status prüfen
    */
-  findOldestCacheEntry() {
-    let oldest = null;
+  async checkServiceHealth() {
+    const status = {
+      google: false,
+      osm: false,
+      timestamp: Date.now(),
+    };
 
-    for (const [key, value] of this.cache.entries()) {
-      if (
-        value.calculatedAt &&
-        (!oldest || value.calculatedAt < oldest.calculatedAt)
-      ) {
-        oldest = { key, ...value };
+    // Google Maps testen
+    if (this.apiKeys.google) {
+      try {
+        const testUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=Rheine&key=${this.apiKeys.google}`;
+        const response = await fetch(testUrl);
+        status.google = response.ok;
+      } catch (error) {
+        status.google = false;
       }
     }
 
-    return oldest;
-  }
+    // OpenStreetMap testen
+    try {
+      const testUrl =
+        "https://nominatim.openstreetmap.org/search?q=Rheine&format=json&limit=1";
+      const response = await fetch(testUrl);
+      status.osm = response.ok;
+    } catch (error) {
+      status.osm = false;
+    }
 
-  /**
-   * Berechnet Cache-Hit-Rate (vereinfacht)
-   */
-  calculateCacheHitRate() {
-    // In einer echten Implementation würde man Hits vs. Misses tracken
-    return this.cache.size > 0 ? 0.8 : 0; // 80% Hit-Rate als Beispiel
+    return status;
   }
 }
 
