@@ -2,7 +2,7 @@
 
 /**
  * Mobile Car Service - Backend Konfiguration
- * Zentrale Einstellungen für das gesamte Backend
+ * Angepasst für PHP Development Server (php -S localhost:8000)
  */
 
 // Error Reporting (für Development)
@@ -12,10 +12,16 @@ ini_set('display_errors', 1);
 // Timezone setzen
 date_default_timezone_set('Europe/Berlin');
 
-// App-Konfiguration
+// App-Konfiguration - ANGEPASST für Development Server
 define('APP_NAME', 'Mobile Car Service');
 define('APP_VERSION', '1.0.0');
-define('APP_URL', 'http://localhost/mobile-car-service');
+
+// WICHTIG: URL für PHP Development Server
+if ($_SERVER['SERVER_NAME'] === 'localhost' && $_SERVER['SERVER_PORT'] == '8000') {
+    define('APP_URL', 'http://localhost:8000');
+} else {
+    define('APP_URL', 'http://localhost/mobile-car-service');
+}
 
 // Datenbank-Konfiguration
 define('DB_PATH', __DIR__ . '/data/database.sqlite');
@@ -26,17 +32,17 @@ define('BASE_PATH', __DIR__);
 define('LOGS_PATH', __DIR__ . '/logs/');
 define('UPLOADS_PATH', __DIR__ . '/uploads/');
 
-// API-Konfiguration
+// API-Konfiguration - ANGEPASST für Development Server
 define('API_VERSION', 'v1');
 define('API_PREFIX', '/backend/api.php');
 
-// CORS-Einstellungen
-define('CORS_ORIGIN', '*'); // In Produktion spezifische Domain setzen
+// CORS-Einstellungen - WICHTIG für Development
+define('CORS_ORIGIN', '*'); // Für Development OK
 define('CORS_METHODS', 'GET, POST, PUT, DELETE, OPTIONS');
 define('CORS_HEADERS', 'Content-Type, Authorization, X-Requested-With');
 
 // E-Mail-Konfiguration
-define('SMTP_HOST', 'localhost'); // Für lokalen Server
+define('SMTP_HOST', 'localhost');
 define('SMTP_PORT', 587);
 define('SMTP_USERNAME', '');
 define('SMTP_PASSWORD', '');
@@ -59,7 +65,7 @@ define('BUSINESS_HOURS_END', 18);
 define('BUSINESS_DAYS_ADVANCE', 21);
 
 // Sicherheits-Einstellungen
-define('SESSION_TIMEOUT', 3600); // 1 Stunde
+define('SESSION_TIMEOUT', 3600);
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('PASSWORD_MIN_LENGTH', 8);
 
@@ -75,8 +81,16 @@ define('LOG_LEVEL_DEBUG', 4);
 define('CURRENT_LOG_LEVEL', LOG_LEVEL_INFO);
 
 // Cache-Einstellungen
-define('CACHE_DURATION', 3600); // 1 Stunde
+define('CACHE_DURATION', 3600);
 define('CACHE_ENABLED', true);
+
+/**
+ * Development Server Helper
+ */
+function isDevelopmentServer()
+{
+    return $_SERVER['SERVER_NAME'] === 'localhost' && $_SERVER['SERVER_PORT'] == '8000';
+}
 
 /**
  * Umgebungsabhängige Konfiguration
@@ -107,46 +121,32 @@ class Config
                 'name' => APP_NAME,
                 'version' => APP_VERSION,
                 'url' => APP_URL,
-                'debug' => $this->isDebugMode()
+                'debug' => $this->isDebugMode(),
+                'development_server' => isDevelopmentServer()
             ],
             'database' => [
                 'path' => DB_PATH,
                 'backup_path' => DB_BACKUP_PATH
             ],
-            'email' => [
-                'host' => SMTP_HOST,
-                'port' => SMTP_PORT,
-                'username' => SMTP_USERNAME,
-                'password' => SMTP_PASSWORD,
-                'from_email' => SMTP_FROM_EMAIL,
-                'from_name' => SMTP_FROM_NAME
+            'cors' => [
+                'origin' => CORS_ORIGIN,
+                'methods' => CORS_METHODS,
+                'headers' => CORS_HEADERS
             ],
             'business' => [
-                'travel_cost_per_km' => TRAVEL_COST_PER_KM,
-                'free_distance_km' => FREE_DISTANCE_KM,
                 'hours_start' => BUSINESS_HOURS_START,
                 'hours_end' => BUSINESS_HOURS_END,
-                'days_advance' => BUSINESS_DAYS_ADVANCE
+                'days_advance' => BUSINESS_DAYS_ADVANCE,
+                'travel_cost_per_km' => TRAVEL_COST_PER_KM,
+                'free_distance_km' => FREE_DISTANCE_KM
+            ],
+            'company' => [
+                'name' => COMPANY_NAME,
+                'address' => COMPANY_ADDRESS,
+                'phone' => COMPANY_PHONE,
+                'email' => COMPANY_EMAIL
             ]
         ];
-
-        // Umgebungsabhängige Einstellungen laden
-        $this->loadEnvironmentConfig();
-    }
-
-    private function loadEnvironmentConfig()
-    {
-        // .env Datei laden falls vorhanden
-        $envFile = BASE_PATH . '/.env';
-        if (file_exists($envFile)) {
-            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
-                    list($key, $value) = explode('=', $line, 2);
-                    $this->setNestedConfig(trim($key), trim($value, '"\''));
-                }
-            }
-        }
     }
 
     private function setNestedConfig($key, $value)
@@ -189,7 +189,8 @@ class Config
         return (
             $_SERVER['SERVER_NAME'] === 'localhost' ||
             $_SERVER['SERVER_NAME'] === '127.0.0.1' ||
-            isset($_GET['debug'])
+            isset($_GET['debug']) ||
+            isDevelopmentServer()
         );
     }
 
@@ -203,17 +204,11 @@ class Config
  * Helper-Funktionen
  */
 
-/**
- * Konfigurationswert abrufen
- */
 function config($key, $default = null)
 {
     return Config::getInstance()->get($key, $default);
 }
 
-/**
- * Debug-Information ausgeben
- */
 function debug($data, $die = false)
 {
     if (config('app.debug')) {
@@ -227,20 +222,22 @@ function debug($data, $die = false)
     }
 }
 
-/**
- * JSON-Response senden
- */
 function jsonResponse($data, $status = 200)
 {
     http_response_code($status);
     header('Content-Type: application/json');
-    echo json_encode($data);
+
+    // CORS Headers für Development Server
+    if (isDevelopmentServer()) {
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    }
+
+    echo json_encode($data, JSON_PRETTY_PRINT);
     exit;
 }
 
-/**
- * Error-Response senden
- */
 function errorResponse($message, $status = 400, $code = null)
 {
     jsonResponse([
@@ -253,9 +250,6 @@ function errorResponse($message, $status = 400, $code = null)
     ], $status);
 }
 
-/**
- * Success-Response senden
- */
 function successResponse($data = [], $message = null)
 {
     $response = [
@@ -270,15 +264,12 @@ function successResponse($data = [], $message = null)
     jsonResponse($response);
 }
 
-/**
- * CORS-Headers setzen
- */
 function setCorsHeaders()
 {
     header('Access-Control-Allow-Origin: ' . CORS_ORIGIN);
     header('Access-Control-Allow-Methods: ' . CORS_METHODS);
     header('Access-Control-Allow-Headers: ' . CORS_HEADERS);
-    header('Access-Control-Max-Age: 86400'); // 24 Stunden
+    header('Access-Control-Max-Age: 86400');
 
     // Preflight-Request behandeln
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -287,81 +278,38 @@ function setCorsHeaders()
     }
 }
 
-/**
- * Request-Body als JSON parsen
- */
 function getJsonInput()
 {
     $input = file_get_contents('php://input');
     return json_decode($input, true);
 }
 
-/**
- * Eindeutige ID generieren
- */
 function generateId($prefix = '')
 {
-    return $prefix . strtoupper(uniqid());
+    return $prefix . uniqid() . '-' . random_int(1000, 9999);
 }
 
 /**
- * Sichere Zufallsstring generieren
- */
-function generateRandomString($length = 32)
-{
-    return bin2hex(random_bytes($length / 2));
-}
-
-/**
- * Request-IP abrufen
+ * Development Server spezifische Funktionen
  */
 function getClientIp()
 {
-    $ipKeys = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP', 'REMOTE_ADDR'];
-
-    foreach ($ipKeys as $key) {
-        if (!empty($_SERVER[$key])) {
-            $ip = $_SERVER[$key];
-            if (strpos($ip, ',') !== false) {
-                $ip = trim(explode(',', $ip)[0]);
-            }
-            if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                return $ip;
-            }
-        }
+    if (isDevelopmentServer()) {
+        return '127.0.0.1'; // Development Server
     }
 
-    return '0.0.0.0';
+    return $_SERVER['HTTP_X_FORWARDED_FOR'] ??
+        $_SERVER['HTTP_X_REAL_IP'] ??
+        $_SERVER['REMOTE_ADDR'] ??
+        'unknown';
 }
 
 /**
- * User-Agent abrufen
+ * Database Helper-Funktion
  */
-function getUserAgent()
-{
-    return $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-}
-
-/**
- * Request-Daten loggen
- */
-function logRequest()
-{
-    if (config('app.debug')) {
-        $logData = [
-            'timestamp' => date('c'),
-            'method' => $_SERVER['REQUEST_METHOD'],
-            'uri' => $_SERVER['REQUEST_URI'],
-            'ip' => getClientIp(),
-            'user_agent' => getUserAgent()
-        ];
-
-        error_log('REQUEST: ' . json_encode($logData));
+if (!function_exists('db')) {
+    function db()
+    {
+        return Database::getInstance();
     }
 }
-
-// CORS-Headers automatisch setzen
-setCorsHeaders();
-
-// Request loggen
-logRequest();

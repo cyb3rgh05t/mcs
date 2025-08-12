@@ -125,13 +125,6 @@ class Database
                 FOREIGN KEY (service_id) REFERENCES services(id)
             );
             
-            -- Einstellungen-Tabelle
-            CREATE TABLE IF NOT EXISTS settings (
-                key TEXT PRIMARY KEY,
-                value TEXT,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-            
             -- Logs-Tabelle
             CREATE TABLE IF NOT EXISTS logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -143,134 +136,23 @@ class Database
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             
-            -- Indizes für Performance
-            CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
-            CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(booking_date);
-            CREATE INDEX IF NOT EXISTS idx_bookings_customer ON bookings(customer_id);
-            CREATE INDEX IF NOT EXISTS idx_booking_services_booking ON booking_services(booking_id);
-            CREATE INDEX IF NOT EXISTS idx_logs_level_date ON logs(level, created_at);
+            -- Standard-Services einfügen
+            INSERT OR IGNORE INTO services (id, name, description, price, duration, category, icon, popular) VALUES
+            (1, 'Außenwäsche Basic', 'Grundreinigung der Fahrzeugaußenseite', 25.00, 30, 'exterior', 'fas fa-car', 1),
+            (2, 'Außenwäsche Premium', 'Intensive Außenreinigung mit Wachs', 49.00, 60, 'exterior', 'fas fa-star', 1),
+            (3, 'Innenreinigung', 'Komplette Fahrzeuginnenreinigung', 35.00, 45, 'interior', 'fas fa-couch', 1),
+            (4, 'Polsterreinigung', 'Tiefenreinigung der Fahrzeugpolster', 60.00, 90, 'interior', 'fas fa-spray-can', 0),
+            (5, 'Motorwäsche', 'Professionelle Motorraum-Reinigung', 40.00, 45, 'engine', 'fas fa-cog', 0),
+            (6, 'Felgenreinigung', 'Intensive Felgen- und Reifenreinigung', 25.00, 30, 'wheels', 'fas fa-circle', 1),
+            (7, 'Komplettpaket Standard', 'Außen- und Innenreinigung kombiniert', 55.00, 75, 'package', 'fas fa-check-circle', 1),
+            (8, 'Komplettpaket Premium', 'Alle Services in einem Paket', 95.00, 120, 'package', 'fas fa-crown', 0);
         ";
 
         try {
             $this->connection->exec($sql);
-            $this->insertDefaultServices();
         } catch (PDOException $e) {
             error_log('Table creation failed: ' . $e->getMessage());
-            throw new Exception('Tabellen konnten nicht erstellt werden');
-        }
-    }
-
-    /**
-     * Standard-Services in die Datenbank einfügen
-     */
-    private function insertDefaultServices()
-    {
-        // Prüfen ob Services bereits existieren
-        $count = $this->query("SELECT COUNT(*) as count FROM services")->fetch()['count'];
-
-        if ($count > 0) {
-            return; // Services bereits vorhanden
-        }
-
-        $services = [
-            [
-                'name' => 'Basis-Reinigung',
-                'description' => 'Außenreinigung, Innenraumreinigung, Staubsaugen',
-                'detailed_description' => 'Komplette Außenwäsche mit Shampoo, Innenraumreinigung inklusive Staubsaugen aller Sitze und Fußmatten, Armaturenbrett abwischen.',
-                'price' => 45.00,
-                'duration' => 60,
-                'category' => 'basic',
-                'icon' => 'fas fa-spray-can',
-                'popular' => 0
-            ],
-            [
-                'name' => 'Premium-Reinigung',
-                'description' => 'Basis + Felgenreinigung, Armaturenpflege, Scheibenpolitur',
-                'detailed_description' => 'Alle Leistungen der Basis-Reinigung plus professionelle Felgenreinigung, Armaturenpflege mit hochwertigen Produkten und Scheibenpolitur für kristallklare Sicht.',
-                'price' => 75.00,
-                'duration' => 90,
-                'category' => 'premium',
-                'icon' => 'fas fa-star',
-                'popular' => 1
-            ],
-            [
-                'name' => 'Komplett-Reinigung',
-                'description' => 'Premium + Wachsbehandlung, Lederpflege, Motorraumreinigung',
-                'detailed_description' => 'Das Komplettpaket für Ihr Fahrzeug. Alle Premium-Leistungen plus Wachsversiegelung, professionelle Lederpflege und schonende Motorraumreinigung.',
-                'price' => 120.00,
-                'duration' => 150,
-                'category' => 'luxury',
-                'icon' => 'fas fa-crown',
-                'popular' => 0
-            ],
-            [
-                'name' => 'Innenraumaufbereitung',
-                'description' => 'Komplette Innenraumaufbereitung inkl. Polsterreinigung',
-                'detailed_description' => 'Spezialisierte Tiefenreinigung des Innenraums mit Polsterreinigung, Teppichreinigung und Geruchsbeseitigung.',
-                'price' => 65.00,
-                'duration' => 80,
-                'category' => 'interior',
-                'icon' => 'fas fa-chair',
-                'popular' => 0
-            ],
-            [
-                'name' => 'Felgenspezialist',
-                'description' => 'Professionelle Felgenreinigung und -versiegelung',
-                'detailed_description' => 'Intensive Reinigung und Pflege Ihrer Felgen mit speziellen Reinigungsmitteln und abschließender Versiegelung für langanhaltenden Schutz.',
-                'price' => 35.00,
-                'duration' => 45,
-                'category' => 'wheels',
-                'icon' => 'fas fa-circle',
-                'popular' => 0
-            ],
-            [
-                'name' => 'Wachsversiegelung',
-                'description' => 'Hochwertige Wachsversiegelung für langanhaltenden Schutz',
-                'detailed_description' => 'Professionelle Hartwachs-Versiegelung die Ihren Lack für Monate vor Umwelteinflüssen schützt und für tiefen Glanz sorgt.',
-                'price' => 85.00,
-                'duration' => 120,
-                'category' => 'protection',
-                'icon' => 'fas fa-shield-alt',
-                'popular' => 1
-            ],
-            [
-                'name' => 'Schnell-Service',
-                'description' => 'Express-Außenreinigung für zwischendurch',
-                'detailed_description' => 'Schnelle aber gründliche Außenreinigung für alle die wenig Zeit haben aber trotzdem ein sauberes Auto möchten.',
-                'price' => 25.00,
-                'duration' => 30,
-                'category' => 'express',
-                'icon' => 'fas fa-bolt',
-                'popular' => 0
-            ],
-            [
-                'name' => 'Motorreinigung',
-                'description' => 'Schonende professionelle Motorraumreinigung',
-                'detailed_description' => 'Fachgerechte Reinigung des Motorraums mit speziellen Reinigungsmitteln unter Schutz aller elektronischen Komponenten.',
-                'price' => 40.00,
-                'duration' => 45,
-                'category' => 'engine',
-                'icon' => 'fas fa-cog',
-                'popular' => 0
-            ]
-        ];
-
-        $sql = "INSERT INTO services (name, description, detailed_description, price, duration, category, icon, popular) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
-        $stmt = $this->prepare($sql);
-
-        foreach ($services as $service) {
-            $stmt->execute([
-                $service['name'],
-                $service['description'],
-                $service['detailed_description'],
-                $service['price'],
-                $service['duration'],
-                $service['category'],
-                $service['icon'],
-                $service['popular']
-            ]);
+            throw new Exception('Tabellenerstellung fehlgeschlagen');
         }
     }
 
@@ -284,7 +166,7 @@ class Database
             $stmt->execute($params);
             return $stmt;
         } catch (PDOException $e) {
-            error_log('Database query failed: ' . $e->getMessage() . ' SQL: ' . $sql);
+            error_log('Query failed: ' . $e->getMessage() . ' SQL: ' . $sql);
             throw new Exception('Datenbankfehler: ' . $e->getMessage());
         }
     }
@@ -446,18 +328,26 @@ class Database
         // Tabellenzählungen
         $tables = ['customers', 'bookings', 'services', 'booking_services', 'logs'];
         foreach ($tables as $table) {
-            $sql = "SELECT COUNT(*) as count FROM $table";
-            $result = $this->fetchOne($sql);
-            $stats[$table] = $result['count'] ?? 0;
+            try {
+                $sql = "SELECT COUNT(*) as count FROM $table";
+                $result = $this->fetchOne($sql);
+                $stats[$table] = $result['count'] ?? 0;
+            } catch (Exception $e) {
+                $stats[$table] = 0;
+            }
         }
 
         // Datenbankgröße
         $stats['database_size'] = file_exists(DB_PATH) ? filesize(DB_PATH) : 0;
 
         // Letzte Aktivität
-        $sql = "SELECT MAX(created_at) as last_activity FROM bookings";
-        $result = $this->fetchOne($sql);
-        $stats['last_booking'] = $result['last_activity'];
+        try {
+            $sql = "SELECT MAX(created_at) as last_activity FROM bookings";
+            $result = $this->fetchOne($sql);
+            $stats['last_booking'] = $result['last_activity'];
+        } catch (Exception $e) {
+            $stats['last_booking'] = null;
+        }
 
         return $stats;
     }
@@ -558,7 +448,7 @@ class QueryBuilder
             $operator = '=';
         }
 
-        $this->where[] = ['column' => $column, 'operator' => $operator, 'value' => $value];
+        $this->where[] = [$column, $operator, $value];
         return $this;
     }
 
@@ -581,12 +471,12 @@ class QueryBuilder
         $params = [];
 
         if (!empty($this->where)) {
-            $whereParts = [];
+            $whereClause = [];
             foreach ($this->where as $condition) {
-                $whereParts[] = "{$condition['column']} {$condition['operator']} ?";
-                $params[] = $condition['value'];
+                $whereClause[] = "{$condition[0]} {$condition[1]} ?";
+                $params[] = $condition[2];
             }
-            $sql .= " WHERE " . implode(' AND ', $whereParts);
+            $sql .= " WHERE " . implode(' AND ', $whereClause);
         }
 
         if (!empty($this->orderBy)) {
@@ -594,9 +484,9 @@ class QueryBuilder
         }
 
         if ($this->limit) {
-            $sql .= " LIMIT " . $this->limit;
+            $sql .= " LIMIT {$this->limit}";
             if ($this->offset) {
-                $sql .= " OFFSET " . $this->offset;
+                $sql .= " OFFSET {$this->offset}";
             }
         }
 
@@ -607,18 +497,6 @@ class QueryBuilder
     {
         $this->limit(1);
         $results = $this->get();
-        return !empty($results) ? $results[0] : null;
+        return $results ? $results[0] : null;
     }
-}
-
-// Helper-Funktion für einfachen Datenbankzugriff
-function db()
-{
-    return Database::getInstance();
-}
-
-// Query Builder Helper
-function query()
-{
-    return new QueryBuilder(Database::getInstance());
 }
