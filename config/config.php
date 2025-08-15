@@ -1,5 +1,6 @@
 <?php
 // config/config.php - Hauptkonfigurationsdatei
+define('ENVIRONMENT', 'production');
 
 // Business Configuration
 define('BUSINESS_NAME', 'MCS Mobile Car Solutions');

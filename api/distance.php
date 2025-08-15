@@ -383,9 +383,6 @@ function estimateDistanceFromAddress($address)
         'mannheim' => 320,
         'augsburg' => 500,
         'wiesbaden' => 300,
-        'mönchengladbach' => 110,
-        'gelsenkirchen' => 80,
-        'braunschweig' => 180,
         'chemnitz' => 500,
         'kiel' => 280,
         'magdeburg' => 350,
@@ -397,15 +394,12 @@ function estimateDistanceFromAddress($address)
         'kassel' => 250,
         'mainz' => 300,
         'saarbrücken' => 350,
-        'hamm' => 70,
         'ludwigshafen' => 320,
         'mülheim' => 90,
-        'oldenburg' => 120,
         'leverkusen' => 130,
         'solingen' => 110,
         'herne' => 85,
-        'neuss' => 120,
-        'paderborn' => 90
+        'neuss' => 120
     ];
 
     // Suche nach Städtenamen in der Adresse
