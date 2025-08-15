@@ -92,7 +92,7 @@ http_response_code((int)$error_code);
         .error-code {
             font-size: 120px;
             font-weight: bold;
-            color: #ff6b35;
+            color: #ffffff;
             margin-bottom: 20px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
             line-height: 1;
@@ -115,12 +115,12 @@ http_response_code((int)$error_code);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 30px;
-            border-left: 4px solid #ff6b35;
+            border-left: 4px solid #ffffff;
         }
 
         .error-suggestions {
             background: rgba(255, 107, 53, 0.1);
-            border: 1px solid #ff6b35;
+            border: 1px solid #ffffff;
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 30px;
@@ -128,7 +128,7 @@ http_response_code((int)$error_code);
         }
 
         .error-suggestions h3 {
-            color: #ff6b35;
+            color: #ffffff;
             margin-bottom: 15px;
             text-align: center;
         }
@@ -160,7 +160,7 @@ http_response_code((int)$error_code);
         }
 
         .error-actions a {
-            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            background: linear-gradient(45deg, #ffffff, #ff8c42);
             color: white;
             padding: 12px 24px;
             text-decoration: none;
@@ -180,8 +180,8 @@ http_response_code((int)$error_code);
         }
 
         .error-actions .secondary:hover {
-            border-color: #ff6b35;
-            color: #ff6b35;
+            border-color: #ffffff;
+            color: #ffffff;
         }
 
         .error-details {

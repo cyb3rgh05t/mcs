@@ -366,7 +366,7 @@ function updateDistanceInfo(distanceKm, duration) {
             <div>Entfernung: <strong>${distanceKm.toFixed(1)} km</strong></div>
             <div>Fahrzeit: <strong>${duration}</strong></div>
             <div style="grid-column: 1 / -1; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.2);">
-                Anfahrtskosten: <strong style="color: #ff6b35;">${travelCost.toFixed(
+                Anfahrtskosten: <strong style="color: #ffffff;">${travelCost.toFixed(
                   2
                 )} €</strong>
             </div>
@@ -386,12 +386,12 @@ function showDistanceLoading() {
   loadingDiv.className = "distance-loading";
   loadingDiv.style.cssText = `
         background: rgba(255, 107, 53, 0.1); 
-        border: 1px solid #ff6b35; 
+        border: 1px solid #ffffff; 
         border-radius: 5px; 
         padding: 10px; 
         margin-top: 10px; 
         font-size: 14px;
-        color: #ff6b35;
+        color: #ffffff;
         text-align: center;
     `;
   loadingDiv.innerHTML = "🔄 Entfernung wird berechnet...";

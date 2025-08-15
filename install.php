@@ -24,8 +24,8 @@ if (file_exists('config/config.php') && !isset($_GET['force'])) {
         die('<!DOCTYPE html>
         <html><head><title>Installation bereits abgeschlossen</title>
         <style>body{font-family:Arial,sans-serif;max-width:600px;margin:100px auto;padding:20px;background:#1a1a1a;color:#fff;text-align:center;}
-        .message{background:rgba(255,107,53,0.1);border:1px solid #ff6b35;padding:20px;border-radius:10px;}
-        a{color:#ff6b35;text-decoration:none;}</style></head>
+        .message{background:rgba(255,107,53,0.1);border:1px solid #ffffff;padding:20px;border-radius:10px;}
+        a{color:#ffffff;text-decoration:none;}</style></head>
         <body><div class="message">
         <h2>✅ Installation bereits abgeschlossen</h2>
         <p>Das MCS Booking System ist bereits installiert und konfiguriert.</p>
@@ -355,7 +355,7 @@ function checkSystemRequirements()
         }
 
         .header h1 {
-            color: #ff6b35;
+            color: #ffffff;
             font-size: 2.5em;
             margin-bottom: 10px;
         }
@@ -388,7 +388,7 @@ function checkSystemRequirements()
         }
 
         .progress-step.active {
-            color: #ff6b35;
+            color: #ffffff;
             font-weight: bold;
         }
 
@@ -410,7 +410,7 @@ function checkSystemRequirements()
         }
 
         .progress-step.active .step-number {
-            background: #ff6b35;
+            background: #ffffff;
         }
 
         .progress-step.completed .step-number {
@@ -427,7 +427,7 @@ function checkSystemRequirements()
         }
 
         .step-title {
-            color: #ff6b35;
+            color: #ffffff;
             font-size: 1.8em;
             margin-bottom: 20px;
             text-align: center;
@@ -457,7 +457,7 @@ function checkSystemRequirements()
 
         .form-input:focus {
             outline: none;
-            border-color: #ff6b35;
+            border-color: #ffffff;
             box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
         }
 
@@ -476,7 +476,7 @@ function checkSystemRequirements()
         }
 
         .btn {
-            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            background: linear-gradient(45deg, #ffffff, #ff8c42);
             color: white;
             padding: 12px 30px;
             text-decoration: none;
@@ -501,8 +501,8 @@ function checkSystemRequirements()
         }
 
         .btn-secondary:hover {
-            border-color: #ff6b35;
-            color: #ff6b35;
+            border-color: #ffffff;
+            color: #ffffff;
             box-shadow: none;
         }
 
@@ -528,7 +528,7 @@ function checkSystemRequirements()
 
         .requirements-table th {
             background: rgba(255, 107, 53, 0.2);
-            color: #ff6b35;
+            color: #ffffff;
             font-weight: bold;
         }
 
@@ -905,7 +905,7 @@ function checkSystemRequirements()
                             placeholder="AIzaSyC...">
                         <div class="help-text">
                             Ohne API-Key werden Entfernungen geschätzt.
-                            <a href="https://console.cloud.google.com/" target="_blank" style="color: #ff6b35;">
+                            <a href="https://console.cloud.google.com/" target="_blank" style="color: #ffffff;">
                                 API-Key beantragen
                             </a>
                         </div>
@@ -968,7 +968,7 @@ function checkSystemRequirements()
                     </div>
 
                     <div style="text-align: left; margin: 30px 0;">
-                        <h3 style="color: #ff6b35; margin-bottom: 15px;">Was wurde installiert:</h3>
+                        <h3 style="color: #ffffff; margin-bottom: 15px;">Was wurde installiert:</h3>
                         <ul style="color: #ccc; padding-left: 20px;">
                             <li>✅ Vollständiges Buchungssystem</li>
                             <li>✅ SQLite-Datenbank mit Standard-Daten</li>
@@ -980,7 +980,7 @@ function checkSystemRequirements()
                     </div>
 
                     <div style="text-align: left; margin: 30px 0;">
-                        <h3 style="color: #ff6b35; margin-bottom: 15px;">Nächste Schritte:</h3>
+                        <h3 style="color: #ffffff; margin-bottom: 15px;">Nächste Schritte:</h3>
                         <ol style="color: #ccc; padding-left: 20px;">
                             <li>Testen Sie das Buchungssystem</li>
                             <li>Passen Sie Services im Admin-Panel an</li>

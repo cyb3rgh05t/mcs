@@ -54,7 +54,7 @@ $services = $bookingManager->getAllServices();
             <div id="selected-services-list"></div>
             <div class="summary-item" style="border-top: 2px solid rgba(255, 107, 53, 0.3); padding-top: 15px; margin-top: 15px;">
                 <span class="summary-label" style="font-weight: bold;">Zwischensumme:</span>
-                <span class="summary-value" id="services-total" style="font-weight: bold; color: #ff6b35;">0,00 €</span>
+                <span class="summary-value" id="services-total" style="font-weight: bold; color: #ffffff;">0,00 €</span>
             </div>
         </div>
     </div>
@@ -94,13 +94,13 @@ $services = $bookingManager->getAllServices();
     }
 
     .service-card.selected {
-        border-color: #ff6b35;
+        border-color: #ffffff;
         background: linear-gradient(45deg, rgba(255, 107, 53, 0.2), rgba(255, 140, 66, 0.2));
     }
 
     .service-card.selected .service-checkbox {
-        background: #ff6b35;
-        border-color: #ff6b35;
+        background: #ffffff;
+        border-color: #ffffff;
     }
 
     .service-card.selected .service-checkbox .checkmark {

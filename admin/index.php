@@ -68,6 +68,21 @@ if (!$is_logged_in) {
         <title>MCS Admin - Login</title>
         <link rel="stylesheet" href="../assets/css/style.css">
         <style>
+            body {
+                background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+            }
+
+            .quick-action {
+                background: #ffffff;
+                color: #000000;
+            }
+
+            .quick-action:hover {
+                background: transparent;
+                color: #ffffff;
+                border: 1px solid #ffffff;
+            }
+
             .login-container {
                 max-width: 400px;
                 margin: 100px auto;
@@ -80,7 +95,7 @@ if (!$is_logged_in) {
 
             .login-title {
                 text-align: center;
-                color: #ff6b35;
+                color: #ffffff;
                 font-size: 28px;
                 margin-bottom: 30px;
             }
@@ -230,7 +245,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
 
         .admin-nav a.active,
         .admin-nav a:hover {
-            background: #ff6b35;
+            background: #ffffff;
             color: white;
             transform: translateY(-2px);
         }
@@ -258,7 +273,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
         .stat-number {
             font-size: 36px;
             font-weight: bold;
-            color: #ff6b35;
+            color: #ffffff;
             margin-bottom: 8px;
             display: block;
         }
@@ -287,7 +302,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
         .admin-table th {
             background: rgba(255, 107, 53, 0.2);
             font-weight: bold;
-            color: #ff6b35;
+            color: #ffffff;
         }
 
         .admin-table tr:hover {
@@ -331,7 +346,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
         }
 
         .admin-form h3 {
-            color: #ff6b35;
+            color: #ffffff;
             margin-bottom: 20px;
             font-size: 20px;
         }
@@ -369,7 +384,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
         }
 
         .quick-action {
-            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            background: linear-gradient(45deg, #ffffff, #ff8c42);
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
@@ -388,7 +403,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
     <div class="container">
         <header class="header">
             <div class="logo">
-                <h2 style="color: #ff6b35;">🛠️ MCS Admin Panel</h2>
+                <h2 style="color: #ffffff;">🛠️ MCS Admin Panel</h2>
             </div>
             <div style="display: flex; gap: 15px; align-items: center;">
                 <span style="color: #ccc;">Willkommen, Admin</span>
@@ -417,7 +432,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
 
             <?php if ($current_tab === 'dashboard'): ?>
                 <!-- Dashboard -->
-                <h2 style="color: #ff6b35; margin-bottom: 20px;">📊 Dashboard</h2>
+                <h2 style="color: #ffffff; margin-bottom: 20px;">📊 Dashboard</h2>
 
                 <!-- Statistics Cards -->
                 <div class="stats-grid">
@@ -482,7 +497,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
 
             <?php elseif ($current_tab === 'bookings'): ?>
                 <!-- Bookings Management -->
-                <h2 style="color: #ff6b35; margin-bottom: 20px;">📅 Buchungsverwaltung</h2>
+                <h2 style="color: #ffffff; margin-bottom: 20px;">📅 Buchungsverwaltung</h2>
 
                 <?php
                 $all_bookings = $bookingManager->getBookingsForAdmin(100);
@@ -548,7 +563,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
 
             <?php elseif ($current_tab === 'services'): ?>
                 <!-- Services Management -->
-                <h2 style="color: #ff6b35; margin-bottom: 20px;">🚗 Leistungen verwalten</h2>
+                <h2 style="color: #ffffff; margin-bottom: 20px;">🚗 Leistungen verwalten</h2>
 
                 <!-- Add New Service -->
                 <div class="admin-form">
@@ -635,7 +650,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
 
             <?php elseif ($current_tab === 'schedule'): ?>
                 <!-- Schedule Management -->
-                <h2 style="color: #ff6b35; margin-bottom: 20px;">⏰ Terminplanung</h2>
+                <h2 style="color: #ffffff; margin-bottom: 20px;">⏰ Terminplanung</h2>
 
                 <!-- Generate Time Slots -->
                 <div class="admin-form">
@@ -720,7 +735,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
 
             <?php else: ?>
                 <!-- Settings -->
-                <h2 style="color: #ff6b35; margin-bottom: 20px;">⚙️ Systemeinstellungen</h2>
+                <h2 style="color: #ffffff; margin-bottom: 20px;">⚙️ Systemeinstellungen</h2>
 
                 <!-- System Info -->
                 <div class="admin-form">
@@ -758,7 +773,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
                         $backups = glob($backup_dir . '/backup_*.sql');
                         if (!empty($backups)) {
                             rsort($backups); // Neueste zuerst
-                            echo '<h4 style="color: #ff6b35; margin-top: 20px;">📋 Vorhandene Backups:</h4>';
+                            echo '<h4 style="color: #ffffff; margin-top: 20px;">📋 Vorhandene Backups:</h4>';
                             echo '<ul style="color: #ccc;">';
                             foreach (array_slice($backups, 0, 10) as $backup) {
                                 $filename = basename($backup);

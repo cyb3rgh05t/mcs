@@ -139,7 +139,7 @@ class EmailManager
             
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); color: white; padding: 30px 20px; text-align: center;">
-                <h1 style="margin: 0; color: #ff6b35; font-size: 28px; font-weight: bold;">' . $businessName . '</h1>
+                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">' . $businessName . '</h1>
                 <p style="margin: 10px 0 0 0; font-size: 18px; color: #ccc;">Buchungsbestätigung</p>
             </div>
             
@@ -148,19 +148,19 @@ class EmailManager
                 
                 <!-- Greeting -->
                 <div style="padding: 30px 30px 20px 30px;">
-                    <h2 style="color: #ff6b35; margin: 0 0 15px 0; font-size: 24px;">Hallo ' . htmlspecialchars($booking['customer_name']) . ',</h2>
+                    <h2 style="color: #ffffff; margin: 0 0 15px 0; font-size: 24px;">Hallo ' . htmlspecialchars($booking['customer_name']) . ',</h2>
                     <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
                         vielen Dank für Ihre Buchung! Wir freuen uns darauf, Ihr Fahrzeug zu pflegen und Ihnen den besten Service zu bieten.
                     </p>
                 </div>
                 
                 <!-- Booking Details -->
-                <div style="margin: 0 30px 30px 30px; background: #f8f9fa; padding: 25px; border-radius: 8px; border-left: 4px solid #ff6b35;">
-                    <h3 style="margin: 0 0 20px 0; color: #ff6b35; font-size: 20px;">📅 Ihre Buchungsdetails</h3>
+                <div style="margin: 0 30px 30px 30px; background: #f8f9fa; padding: 25px; border-radius: 8px; border-left: 4px solid #ffffff;">
+                    <h3 style="margin: 0 0 20px 0; color: #ffffff; font-size: 20px;">📅 Ihre Buchungsdetails</h3>
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="padding: 8px 0; font-weight: bold; width: 30%;">Buchungsnummer:</td>
-                            <td style="padding: 8px 0; color: #ff6b35; font-weight: bold;">#' . $bookingNumber . '</td>
+                            <td style="padding: 8px 0; color: #ffffff; font-weight: bold;">#' . $bookingNumber . '</td>
                         </tr>
                         <tr>
                             <td style="padding: 8px 0; font-weight: bold;">Termin:</td>
@@ -179,7 +179,7 @@ class EmailManager
                 
                 <!-- Services -->
                 <div style="margin: 0 30px 30px 30px;">
-                    <h3 style="color: #ff6b35; margin: 0 0 20px 0; font-size: 20px;">🚗 Gebuchte Leistungen</h3>
+                    <h3 style="color: #ffffff; margin: 0 0 20px 0; font-size: 20px;">🚗 Gebuchte Leistungen</h3>
                     <div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
                         <table style="width: 100%; border-collapse: collapse;">
                             ' . $servicesHtml . '
@@ -187,7 +187,7 @@ class EmailManager
                                 <td style="padding: 15px 12px; font-weight: bold; font-size: 14px;">Anfahrt (' . number_format($booking['distance'] ?? 0, 1) . ' km à ' . number_format(defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50, 2) . '€)</td>
                                 <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 14px;">' . number_format($travelCost, 2, ',', '.') . ' €</td>
                             </tr>
-                            <tr style="background: #ff6b35; color: white;">
+                            <tr style="background: #ffffff; color: white;">
                                 <td style="padding: 18px 12px; font-weight: bold; font-size: 18px;">Gesamtpreis</td>
                                 <td style="padding: 18px 12px; text-align: right; font-weight: bold; font-size: 20px;">' . number_format($booking['total_price'], 2, ',', '.') . ' €</td>
                             </tr>
@@ -208,7 +208,7 @@ class EmailManager
                 
                 <!-- Contact -->
                 <div style="margin: 0 30px 30px 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-                    <h3 style="color: #ff6b35; margin: 0 0 15px 0;">📞 Bei Fragen erreichen Sie uns:</h3>
+                    <h3 style="color: #ffffff; margin: 0 0 15px 0;">📞 Bei Fragen erreichen Sie uns:</h3>
                     <p style="margin: 5px 0; font-size: 16px;"><strong>Telefon:</strong> ' . $businessPhone . '</p>
                     <p style="margin: 5px 0; font-size: 16px;"><strong>E-Mail:</strong> ' . $businessEmail . '</p>
                 </div>
@@ -217,7 +217,7 @@ class EmailManager
             
             <!-- Footer -->
             <div style="background: #2d2d2d; color: #ccc; padding: 30px 20px; text-align: center; font-size: 14px;">
-                <p style="margin: 0 0 10px 0; font-weight: bold; color: #ff6b35;">' . $businessName . '</p>
+                <p style="margin: 0 0 10px 0; font-weight: bold; color: #ffffff;">' . $businessName . '</p>
                 <p style="margin: 0 0 5px 0;">' . $businessAddress . '</p>
                 <p style="margin: 0;">Vielen Dank für Ihr Vertrauen!</p>
             </div>
@@ -250,7 +250,7 @@ class EmailManager
             <title>Neue Buchung</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2 style="color: #ff6b35;">🎉 Neue Buchung eingegangen!</h2>
+            <h2 style="color: #ffffff;">🎉 Neue Buchung eingegangen!</h2>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h3>Buchungsdetails:</h3>
@@ -267,7 +267,7 @@ class EmailManager
                 <h3>Gebuchte Leistungen:</h3>
                 ' . $servicesHtml . '
                 <hr>
-                <p><strong style="color: #ff6b35; font-size: 18px;">Gesamtpreis: ' . number_format($booking['total_price'], 2) . ' €</strong></p>
+                <p><strong style="color: #ffffff; font-size: 18px;">Gesamtpreis: ' . number_format($booking['total_price'], 2) . ' €</strong></p>
             </div>
             
             <div style="background: #d1ecf1; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -277,7 +277,7 @@ class EmailManager
                     <li>Termin in den Kalender eintragen</li>
                     <li>Kunde 30 Min. vor Termin anrufen</li>
                 </ul>
-                <p><a href="' . (isset($_SERVER['HTTP_HOST']) ? 'https://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . '/admin/?tab=bookings" style="background: #ff6b35; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔧 Zur Buchungsverwaltung</a></p>
+                <p><a href="' . (isset($_SERVER['HTTP_HOST']) ? 'https://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . '/admin/?tab=bookings" style="background: #ffffff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔧 Zur Buchungsverwaltung</a></p>
             </div>
             
             <p style="color: #666; font-size: 12px;">Diese E-Mail wurde automatisch vom MCS Buchungssystem generiert.</p>
@@ -317,13 +317,13 @@ class EmailManager
             <title>Terminerinnerung</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2 style="color: #ff6b35;">⏰ Terminerinnerung</h2>
+            <h2 style="color: #ffffff;">⏰ Terminerinnerung</h2>
             
             <p>Hallo ' . htmlspecialchars($booking['customer_name']) . ',</p>
             
             <p>wir möchten Sie daran erinnern, dass Ihr Termin bei ' . $businessName . ' in ' . $hours_before . ' Stunden stattfindet:</p>
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #ff6b35;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #ffffff;">
                 <p><strong>Termin:</strong> ' . date('d.m.Y', strtotime($booking['date'])) . ' um ' . $booking['time'] . ' Uhr</p>
                 <p><strong>Adresse:</strong> ' . htmlspecialchars($booking['customer_address']) . '</p>
                 <p><strong>Buchungsnummer:</strong> #' . str_pad($booking['id'], 6, '0', STR_PAD_LEFT) . '</p>
@@ -349,7 +349,7 @@ class EmailManager
         <html>
         <head><title>Test</title></head>
         <body style="font-family: Arial, sans-serif;">
-            <h2 style="color: #ff6b35;">✅ E-Mail-System funktioniert!</h2>
+            <h2 style="color: #ffffff;">✅ E-Mail-System funktioniert!</h2>
             <p>Dies ist eine Test-E-Mail vom MCS Buchungssystem.</p>
             <p><strong>Zeitstempel:</strong> ' . date('d.m.Y H:i:s') . '</p>
             <p>Wenn Sie diese E-Mail erhalten, ist das E-Mail-System korrekt konfiguriert.</p>

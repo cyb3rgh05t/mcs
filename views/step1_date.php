@@ -74,8 +74,8 @@ $availableDates = $bookingManager->getAvailableDates(90); // Hole mehr Termine f
 
     .calendar-nav {
         background: rgba(255, 107, 53, 0.2);
-        border: 1px solid #ff6b35;
-        color: #ff6b35;
+        border: 1px solid #ffffff;
+        color: #ffffff;
         width: 40px;
         height: 40px;
         border-radius: 50%;
@@ -88,7 +88,7 @@ $availableDates = $bookingManager->getAvailableDates(90); // Hole mehr Termine f
     }
 
     .calendar-nav:hover {
-        background: #ff6b35;
+        background: #4b4a4aff;
         color: white;
         transform: scale(1.1);
     }
@@ -101,7 +101,7 @@ $availableDates = $bookingManager->getAvailableDates(90); // Hole mehr Termine f
     .calendar-title {
         font-size: 20px;
         font-weight: bold;
-        color: #ff6b35;
+        color: #ffffff;
     }
 
     .calendar-weekdays {
@@ -142,7 +142,7 @@ $availableDates = $bookingManager->getAvailableDates(90); // Hole mehr Termine f
 
     .calendar-day:hover:not(.disabled):not(.other-month) {
         background: rgba(255, 107, 53, 0.2);
-        border-color: #ff6b35;
+        border-color: #ffffff;
         transform: scale(1.05);
     }
 
@@ -161,8 +161,8 @@ $availableDates = $bookingManager->getAvailableDates(90); // Hole mehr Termine f
     }
 
     .calendar-day.selected {
-        background: linear-gradient(45deg, #ff6b35, #ff8c42);
-        border-color: #ff6b35;
+        background: #0b8007ff;
+        border-color: #ffffff;
         color: white;
         font-weight: bold;
         box-shadow: 0 0 15px rgba(255, 107, 53, 0.4);
@@ -180,12 +180,12 @@ $availableDates = $bookingManager->getAvailableDates(90); // Hole mehr Termine f
     }
 
     .calendar-day.today {
-        border: 2px solid #ff6b35;
+        border: 2px solid #ffffff;
     }
 
     .selected-date-display {
         background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 140, 66, 0.1));
-        border: 1px solid #ff6b35;
+        border: 1px solid #ffffff;
         border-radius: 10px;
         padding: 20px;
         margin: 20px auto;
@@ -200,7 +200,7 @@ $availableDates = $bookingManager->getAvailableDates(90); // Hole mehr Termine f
     }
 
     .selected-date-value {
-        color: #ff6b35;
+        color: #ffffff;
         font-size: 24px;
         font-weight: bold;
     }

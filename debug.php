@@ -141,7 +141,7 @@ $security_analysis = analyzeSecurityLog();
         }
 
         .header {
-            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            background: linear-gradient(45deg, #ffffff, #ff8c42);
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 30px;
@@ -157,12 +157,12 @@ $security_analysis = analyzeSecurityLog();
         }
 
         .card h3 {
-            color: #ff6b35;
+            color: #ffffff;
             margin-bottom: 15px;
         }
 
         .btn {
-            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            background: linear-gradient(45deg, #ffffff, #ff8c42);
             color: white;
             padding: 10px 20px;
             border: none;
@@ -184,8 +184,8 @@ $security_analysis = analyzeSecurityLog();
         }
 
         .btn-secondary:hover {
-            border-color: #ff6b35;
-            color: #ff6b35;
+            border-color: #ffffff;
+            color: #ffffff;
         }
 
         .grid {

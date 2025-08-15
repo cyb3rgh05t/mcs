@@ -1,10 +1,10 @@
 <?php
 // config/config.php - Hauptkonfigurationsdatei
-define('ENVIRONMENT', 'production');
+define('ENVIRONMENT', 'development');
 
 // Business Configuration
 define('BUSINESS_NAME', 'MCS Mobile Car Solutions');
-define('BUSINESS_ADDRESS', 'Musterstraße 123, 48431 Rheine');
+define('BUSINESS_ADDRESS', 'Hüllerstraße 16, 44649 Herne');
 define('BUSINESS_PHONE', '+49 123 456789');
 define('BUSINESS_EMAIL', 'info@mcs-mobile.de');
 define('BUSINESS_WEBSITE', 'www.mcs-mobile.de');

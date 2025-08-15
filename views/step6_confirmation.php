@@ -18,12 +18,10 @@ $bookingDetails = $bookingManager->getBookingDetails($_SESSION['booking']['id'])
     </p>
 </div>
 
-<div class="booking-number" style="text-align: center; margin: 30px 0;">
-    <div style="background: linear-gradient(45deg, #ff6b35, #ff8c42); color: white; padding: 20px; border-radius: 15px; display: inline-block;">
-        <div style="font-size: 14px; opacity: 0.9;">Ihre Buchungsnummer</div>
-        <div style="font-size: 28px; font-weight: bold; margin: 5px 0;">#<?= str_pad($bookingDetails['id'], 6, '0', STR_PAD_LEFT) ?></div>
-        <div style="font-size: 12px; opacity: 0.8;">Bitte notieren Sie sich diese Nummer</div>
-    </div>
+<div style="background: rgba(30, 30, 30, 0.9); color: white; padding: 20px; border-radius: 6px; display: inline-block;">
+    <div style="font-size: 14px; opacity: 0.9;">Ihre Buchungsnummer</div>
+    <div style="font-size: 28px; font-weight: bold; margin: 5px 0;">#<?= str_pad($bookingDetails['id'], 6, '0', STR_PAD_LEFT) ?></div>
+    <div style="font-size: 12px; opacity: 0.8;">Bitte notieren Sie sich diese Nummer</div>
 </div>
 
 <div class="summary-section">
@@ -78,17 +76,17 @@ $bookingDetails = $bookingManager->getBookingDetails($_SESSION['booking']['id'])
     </div>
 </div>
 
-<div style="background: rgba(255, 107, 53, 0.1); border: 1px solid #ff6b35; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
-    <h3 style="color: #ff6b35; margin-bottom: 15px;">📞 Haben Sie Fragen?</h3>
+<div style="background: rgba(255, 255, 255, 0.05); border: 1px solid #4e4e4e; border-radius: 4px; padding: 20px; margin: 20px 0; text-align: center;">
+    <h3 style="color: #ffffff; margin-bottom: 15px;">📞 Haben Sie Fragen?</h3>
     <p style="margin-bottom: 10px;">
         <strong>Telefon:</strong>
-        <a href="tel:<?= defined('BUSINESS_PHONE') ? BUSINESS_PHONE : '+49123456789' ?>" style="color: #ff6b35; text-decoration: none;">
+        <a href="tel:<?= defined('BUSINESS_PHONE') ? BUSINESS_PHONE : '+49123456789' ?>" style="color: #ffffff; text-decoration: none;">
             <?= defined('BUSINESS_PHONE') ? BUSINESS_PHONE : '+49 123 456789' ?>
         </a>
     </p>
     <p style="margin-bottom: 10px;">
         <strong>E-Mail:</strong>
-        <a href="mailto:<?= defined('BUSINESS_EMAIL') ? BUSINESS_EMAIL : 'info@mcs-mobile.de' ?>" style="color: #ff6b35; text-decoration: none;">
+        <a href="mailto:<?= defined('BUSINESS_EMAIL') ? BUSINESS_EMAIL : 'info@mcs-mobile.de' ?>" style="color: #ffffff; text-decoration: none;">
             <?= defined('BUSINESS_EMAIL') ? BUSINESS_EMAIL : 'info@mcs-mobile.de' ?>
         </a>
     </p>

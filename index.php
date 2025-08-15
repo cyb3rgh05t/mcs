@@ -248,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($errors)) {
                     <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; padding: 10px; margin: 10px 0; border-radius: 5px;">
                         <small style="color: #856404;">
                             <strong>Development-Modus:</strong>
-                            <a href="?reset_security=1" style="color: #ff6b35;">Security-Checks zurücksetzen</a>
+                            <a href="?reset_security=1" style="color: #ffffff;">Security-Checks zurücksetzen</a>
                         </small>
                     </div>
 

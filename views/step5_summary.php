@@ -87,14 +87,14 @@ $appointmentData = $appointment->fetch(PDO::FETCH_ASSOC);
         <span class="summary-label">Anfahrt (<?= $_SESSION['booking']['distance'] ?> km à <?= number_format(defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50, 2, ',', '.') ?>€):</span>
         <span class="summary-value"><?= number_format($_SESSION['booking']['distance'] * (defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50), 2, ',', '.') ?> €</span>
     </div>
-    <div class="summary-item" style="border-top: 3px solid #ff6b35; padding-top: 15px; margin-top: 15px; background: rgba(255, 107, 53, 0.1); padding: 15px; border-radius: 8px;">
+    <div class="summary-item" style="border-top: 3px solid #ffffff; padding-top: 15px; margin-top: 15px; background: rgba(255, 107, 53, 0.1); padding: 15px; border-radius: 8px;">
         <span class="summary-label" style="font-size: 20px; font-weight: bold;">Gesamtpreis (inkl. Anfahrt):</span>
         <span class="summary-value total-price" style="font-size: 24px;"><?= number_format($_SESSION['booking']['total_price'], 2, ',', '.') ?> €</span>
     </div>
 </div>
 
-<div style="background: rgba(255, 107, 53, 0.1); border: 1px solid #ff6b35; border-radius: 10px; padding: 20px; margin: 20px 0;">
-    <h3 style="color: #ff6b35; margin-bottom: 10px;">💳 Zahlungsinformationen</h3>
+<div style="background: rgba(255, 255, 255, 0.05); border: 1px solid #4e4e4e; border-radius: 4px; padding: 20px; margin: 20px 0;">
+    <h3 style="color: #ffffff; margin-bottom: 10px;">💳 Zahlungsinformationen</h3>
     <p style="margin-bottom: 10px;">• Zahlung erfolgt bequem vor Ort</p>
     <p style="margin-bottom: 10px;">• Wir akzeptieren Bargeld und Kartenzahlung</p>
     <p style="margin-bottom: 0;">• Sie erhalten eine ordnungsgemäße Rechnung</p>
@@ -108,7 +108,7 @@ $appointmentData = $appointment->fetch(PDO::FETCH_ASSOC);
         <label class="checkbox-container">
             <input type="checkbox" id="terms" name="terms" required>
             <span class="checkmark"></span>
-            Ich bestätige, dass alle Angaben korrekt sind und akzeptiere die <a href="#" target="_blank" style="color: #ff6b35;">AGB</a>. *
+            Ich bestätige, dass alle Angaben korrekt sind und akzeptiere die <a href="#" target="_blank" style="color: #ffffff;">AGB</a>. *
         </label>
     </div>
 

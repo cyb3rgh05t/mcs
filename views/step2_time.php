@@ -16,8 +16,8 @@ $availableTimes = $bookingManager->getAvailableTimesForDate($selectedDate, $requ
 <p class="step-description">Verfügbare Zeiten für den <?= date('d.m.Y', strtotime($selectedDate)) ?></p>
 
 <?php if (!empty($_SESSION['booking']['services'])): ?>
-    <div style="background: rgba(255, 107, 53, 0.1); border: 1px solid #ff6b35; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-        <p style="margin: 0; color: #ff6b35;">
+    <div style="background: rgba(255, 107, 53, 0.1); border: 1px solid #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+        <p style="margin: 0; color: #ffffff;">
             <strong>ℹ️ Hinweis:</strong> Ihre gewählten Leistungen benötigen insgesamt
             <strong><?= $requiredDuration ?> Minuten</strong>.
             Es werden nur Zeiten angezeigt, bei denen genügend Zeit verfügbar ist.

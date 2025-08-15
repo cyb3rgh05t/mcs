@@ -50,7 +50,7 @@
         <label class="checkbox-container">
             <input type="checkbox" id="privacy" name="privacy" required>
             <span class="checkmark"></span>
-            Ich stimme der <a href="#" target="_blank" style="color: #ff6b35;">Datenschutzerklärung</a> zu und bin mit der Verarbeitung meiner Daten einverstanden. *
+            Ich stimme der <a href="#" target="_blank" style="color: #ffffff;">Datenschutzerklärung</a> zu und bin mit der Verarbeitung meiner Daten einverstanden. *
         </label>
     </div>
 
@@ -74,11 +74,11 @@
         margin: 0;
         width: 18px;
         height: 18px;
-        accent-color: #ff6b35;
+        accent-color: #ffffff;
     }
 
     .form-group .form-input:focus {
-        border-color: #ff6b35;
+        border-color: #ffffff;
         outline: none;
         box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
     }
