@@ -1,11 +1,29 @@
 <?php
-// views/step2_time.php - Uhrzeitauswahl mit Validierung
+// views/step2_time.php - Uhrzeitauswahl mit Dauer-Prüfung
 $selectedDate = $_SESSION['booking']['date'] ?? '';
-$availableTimes = $bookingManager->getAvailableTimesForDate($selectedDate);
+
+// Berechne die benötigte Dauer basierend auf Session-Daten
+$requiredDuration = 60; // Standard
+if (isset($_SESSION['booking']['services'])) {
+    $requiredDuration = $bookingManager->calculateTotalDuration($_SESSION['booking']['services']);
+}
+
+// Hole nur Zeiten, bei denen genug Folge-Slots frei sind
+$availableTimes = $bookingManager->getAvailableTimesForDate($selectedDate, $requiredDuration);
 ?>
 
 <h2 class="step-title">Wählen Sie Ihre Wunschzeit</h2>
 <p class="step-description">Verfügbare Zeiten für den <?= date('d.m.Y', strtotime($selectedDate)) ?></p>
+
+<?php if (!empty($_SESSION['booking']['services'])): ?>
+    <div style="background: rgba(255, 107, 53, 0.1); border: 1px solid #ff6b35; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+        <p style="margin: 0; color: #ff6b35;">
+            <strong>ℹ️ Hinweis:</strong> Ihre gewählten Leistungen benötigen insgesamt
+            <strong><?= $requiredDuration ?> Minuten</strong>.
+            Es werden nur Zeiten angezeigt, bei denen genügend Zeit verfügbar ist.
+        </p>
+    </div>
+<?php endif; ?>
 
 <form method="POST" action="?step=2" id="time-form">
     <input type="hidden" name="csrf_token" value="<?= SecurityManager::generateCSRFToken() ?>">
@@ -20,7 +38,8 @@ $availableTimes = $bookingManager->getAvailableTimesForDate($selectedDate);
 
         <?php if (empty($availableTimes)): ?>
             <div class="no-times-available">
-                <p>Für diesen Tag sind keine Termine mehr verfügbar.</p>
+                <p>Für diesen Tag sind keine ausreichend langen Zeitfenster mehr verfügbar.</p>
+                <p><small>Ihre Leistungen benötigen <?= $requiredDuration ?> Minuten durchgehende Zeit.</small></p>
                 <a href="?step=1" class="btn-secondary">Anderes Datum wählen</a>
             </div>
         <?php endif; ?>

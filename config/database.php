@@ -36,79 +36,58 @@ class Database
 
     private function createTables()
     {
+        // Tabellen mit updated_at von Anfang an
         $sql_appointments = "
-            CREATE TABLE IF NOT EXISTS appointments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                time TEXT NOT NULL,
-                status TEXT DEFAULT 'available' CHECK(status IN ('available', 'booked', 'blocked')),
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(date, time)
-            )";
+        CREATE TABLE IF NOT EXISTS appointments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            status TEXT DEFAULT 'available' CHECK(status IN ('available', 'booked', 'blocked')),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(date, time)
+        )";
 
         $sql_services = "
-            CREATE TABLE IF NOT EXISTS services (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                description TEXT,
-                price DECIMAL(10,2) NOT NULL CHECK(price >= 0),
-                duration INTEGER DEFAULT 60 CHECK(duration > 0),
-                active INTEGER DEFAULT 1 CHECK(active IN (0, 1)),
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )";
+        CREATE TABLE IF NOT EXISTS services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT,
+            price DECIMAL(10,2) NOT NULL CHECK(price >= 0),
+            duration INTEGER DEFAULT 60 CHECK(duration > 0),
+            active INTEGER DEFAULT 1 CHECK(active IN (0, 1)),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )";
 
         $sql_bookings = "
-            CREATE TABLE IF NOT EXISTS bookings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                appointment_id INTEGER NOT NULL,
-                customer_name TEXT NOT NULL,
-                customer_email TEXT NOT NULL,
-                customer_phone TEXT NOT NULL,
-                customer_address TEXT NOT NULL,
-                distance DECIMAL(10,2) CHECK(distance >= 0),
-                total_price DECIMAL(10,2) NOT NULL CHECK(total_price >= 0),
-                status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'completed', 'cancelled')),
-                notes TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (appointment_id) REFERENCES appointments (id) ON DELETE RESTRICT
-            )";
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            appointment_id INTEGER NOT NULL,
+            customer_name TEXT NOT NULL,
+            customer_email TEXT NOT NULL,
+            customer_phone TEXT NOT NULL,
+            customer_address TEXT NOT NULL,
+            distance DECIMAL(10,2) CHECK(distance >= 0),
+            total_price DECIMAL(10,2) NOT NULL CHECK(total_price >= 0),
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'completed', 'cancelled')),
+            notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (appointment_id) REFERENCES appointments (id) ON DELETE RESTRICT
+        )";
 
         $sql_booking_services = "
-            CREATE TABLE IF NOT EXISTS booking_services (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                booking_id INTEGER NOT NULL,
-                service_id INTEGER NOT NULL,
-                price_at_booking DECIMAL(10,2) NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (booking_id) REFERENCES bookings (id) ON DELETE CASCADE,
-                FOREIGN KEY (service_id) REFERENCES services (id) ON DELETE RESTRICT,
-                UNIQUE(booking_id, service_id)
-            )";
-
-        // Triggers für updated_at
-        $trigger_appointments = "
-            CREATE TRIGGER IF NOT EXISTS update_appointments_updated_at 
-            AFTER UPDATE ON appointments 
-            BEGIN 
-                UPDATE appointments SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END";
-
-        $trigger_services = "
-            CREATE TRIGGER IF NOT EXISTS update_services_updated_at 
-            AFTER UPDATE ON services 
-            BEGIN 
-                UPDATE services SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END";
-
-        $trigger_bookings = "
-            CREATE TRIGGER IF NOT EXISTS update_bookings_updated_at 
-            AFTER UPDATE ON bookings 
-            BEGIN 
-                UPDATE bookings SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END";
+        CREATE TABLE IF NOT EXISTS booking_services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            booking_id INTEGER NOT NULL,
+            service_id INTEGER NOT NULL,
+            price_at_booking DECIMAL(10,2) NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (booking_id) REFERENCES bookings (id) ON DELETE CASCADE,
+            FOREIGN KEY (service_id) REFERENCES services (id) ON DELETE RESTRICT,
+            UNIQUE(booking_id, service_id)
+        )";
 
         try {
             $this->connection->exec($sql_appointments);
@@ -116,10 +95,11 @@ class Database
             $this->connection->exec($sql_bookings);
             $this->connection->exec($sql_booking_services);
 
-            // Triggers erstellen
-            $this->connection->exec($trigger_appointments);
-            $this->connection->exec($trigger_services);
-            $this->connection->exec($trigger_bookings);
+            // Prüfe und füge updated_at hinzu falls fehlend (für bestehende DBs)
+            $this->ensureUpdatedAtColumns();
+
+            // Erstelle Trigger
+            $this->createUpdateTriggers();
 
             // Standard-Daten einfügen
             $this->insertDefaultServices();
@@ -127,6 +107,72 @@ class Database
         } catch (PDOException $e) {
             error_log("Table creation failed: " . $e->getMessage());
             die("Datenbankinitialisierung fehlgeschlagen. Bitte kontaktieren Sie den Administrator.");
+        }
+    }
+
+    /**
+     * Stellt sicher dass updated_at Spalten existieren
+     */
+    private function ensureUpdatedAtColumns()
+    {
+        $tables = ['appointments', 'services', 'bookings'];
+
+        foreach ($tables as $table) {
+            try {
+                // Prüfe ob updated_at existiert
+                $stmt = $this->connection->prepare("PRAGMA table_info($table)");
+                $stmt->execute();
+                $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1); // Hole nur Spaltennamen
+
+                if (!in_array('updated_at', $columns)) {
+                    // Füge updated_at hinzu
+                    $this->connection->exec("ALTER TABLE $table ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+                    error_log("Added updated_at column to $table table");
+                }
+            } catch (PDOException $e) {
+                // Spalte existiert bereits oder andere Fehler - ignorieren
+                error_log("Could not add updated_at to $table: " . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Erstellt Update-Trigger für updated_at
+     */
+    private function createUpdateTriggers()
+    {
+        // Lösche alte Trigger falls vorhanden
+        $this->connection->exec("DROP TRIGGER IF EXISTS update_appointments_updated_at");
+        $this->connection->exec("DROP TRIGGER IF EXISTS update_services_updated_at");
+        $this->connection->exec("DROP TRIGGER IF EXISTS update_bookings_updated_at");
+
+        // Erstelle neue Trigger
+        $triggers = [
+            "CREATE TRIGGER IF NOT EXISTS update_appointments_updated_at 
+         AFTER UPDATE ON appointments 
+         BEGIN 
+            UPDATE appointments SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+         END",
+
+            "CREATE TRIGGER IF NOT EXISTS update_services_updated_at 
+         AFTER UPDATE ON services 
+         BEGIN 
+            UPDATE services SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+         END",
+
+            "CREATE TRIGGER IF NOT EXISTS update_bookings_updated_at 
+         AFTER UPDATE ON bookings 
+         BEGIN 
+            UPDATE bookings SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+         END"
+        ];
+
+        foreach ($triggers as $trigger) {
+            try {
+                $this->connection->exec($trigger);
+            } catch (PDOException $e) {
+                error_log("Trigger creation warning: " . $e->getMessage());
+            }
         }
     }
 

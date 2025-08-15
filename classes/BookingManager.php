@@ -1,5 +1,5 @@
 <?php
-// classes/BookingManager.php - Zentrale Buchungslogik
+// classes/BookingManager.php - Erweiterte Version mit Dauer-Blockierung
 
 class BookingManager
 {
@@ -34,26 +34,91 @@ class BookingManager
 
     /**
      * Holt verfügbare Zeiten für ein bestimmtes Datum
+     * NEU: Prüft ob genug aufeinanderfolgende Slots frei sind
      */
-    public function getAvailableTimesForDate($date)
+    public function getAvailableTimesForDate($date, $requiredDuration = 60)
     {
         try {
-            // Validiere Datum
             if (!$this->isValidDate($date)) {
                 return [];
             }
 
+            // Hole alle Slots für den Tag
             $stmt = $this->db->prepare("
-                SELECT id, time 
+                SELECT id, time, status 
                 FROM appointments 
-                WHERE date = ? AND status = 'available' 
+                WHERE date = ?
                 ORDER BY time
             ");
             $stmt->execute([$date]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $allSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $availableTimes = [];
+
+            // Prüfe jeden Slot
+            foreach ($allSlots as $index => $slot) {
+                if ($slot['status'] !== 'available') {
+                    continue;
+                }
+
+                // Prüfe ob genug nachfolgende Slots frei sind
+                $slotsNeeded = ceil($requiredDuration / 60); // 60 Minuten pro Slot
+                $canBook = true;
+
+                for ($i = 0; $i < $slotsNeeded; $i++) {
+                    if (
+                        !isset($allSlots[$index + $i]) ||
+                        $allSlots[$index + $i]['status'] !== 'available'
+                    ) {
+                        $canBook = false;
+                        break;
+                    }
+                }
+
+                if ($canBook) {
+                    $availableTimes[] = [
+                        'id' => $slot['id'],
+                        'time' => $slot['time']
+                    ];
+                }
+            }
+
+            return $availableTimes;
         } catch (PDOException $e) {
             error_log("Error getting available times: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Berechnet die Gesamtdauer der gewählten Services
+     */
+    public function calculateTotalDuration($serviceIds)
+    {
+        if (empty($serviceIds) || !is_array($serviceIds)) {
+            return 60; // Standard 60 Minuten
+        }
+
+        try {
+            $serviceIds = array_filter($serviceIds, 'is_numeric');
+
+            if (empty($serviceIds)) {
+                return 60;
+            }
+
+            $placeholders = str_repeat('?,', count($serviceIds) - 1) . '?';
+            $stmt = $this->db->prepare("
+                SELECT SUM(duration) as total_duration 
+                FROM services 
+                WHERE id IN ($placeholders) AND active = 1
+            ");
+            $stmt->execute($serviceIds);
+
+            $totalDuration = $stmt->fetchColumn();
+            return $totalDuration ?: 60;
+        } catch (PDOException $e) {
+            error_log("Error calculating total duration: " . $e->getMessage());
+            return 60;
         }
     }
 
@@ -79,64 +144,35 @@ class BookingManager
     {
         $address = SecurityManager::validateAddress($customerAddress);
         if (!$address) {
-            return 15; // Standard-Entfernung bei ungültiger Adresse
+            return 15;
         }
-
-        // Hier können Sie Google Maps API, Mapbox oder andere Services integrieren
-        // Für Demo verwenden wir eine intelligente Schätzung
 
         $address = strtolower($address);
 
-        // Bekannte Entfernungen von Rheine
         $distance_map = [
-            // Lokale Umgebung
             'rheine' => 5,
             'emsdetten' => 12,
             'steinfurt' => 18,
             'ibbenbüren' => 25,
             'greven' => 35,
-
-            // Münsterland
             'münster' => 45,
             'osnabrück' => 55,
-            'coesfeld' => 40,
-            'warendorf' => 50,
-
-            // NRW
-            'düsseldorf' => 120,
-            'köln' => 150,
-            'dortmund' => 80,
-            'essen' => 90,
-            'bielefeld' => 70,
-
-            // Niederlande
-            'enschede' => 45,
-            'amsterdam' => 200,
-            'rotterdam' => 180,
         ];
 
-        // Suche nach bekannten Städten
         foreach ($distance_map as $city => $distance) {
             if (strpos($address, $city) !== false) {
-                // Kleine Variation hinzufügen
                 return $distance + rand(-3, 3);
             }
         }
 
-        // PLZ-basierte Schätzung
         if (preg_match('/\b(484|483|485)\d{2}\b/', $address)) {
-            return rand(5, 25); // Lokale Umgebung
+            return rand(5, 25);
         }
 
         if (preg_match('/\b(48|49)\d{3}\b/', $address)) {
-            return rand(20, 60); // Münsterland/Emsland
+            return rand(20, 60);
         }
 
-        if (preg_match('/\b(4)\d{4}\b/', $address)) {
-            return rand(40, 120); // NRW
-        }
-
-        // Standard für unbekannte Adressen
         return rand(25, 50);
     }
 
@@ -149,7 +185,6 @@ class BookingManager
 
         if (!empty($serviceIds) && is_array($serviceIds)) {
             try {
-                // Validiere Service-IDs
                 $serviceIds = array_filter($serviceIds, 'is_numeric');
 
                 if (!empty($serviceIds)) {
@@ -164,7 +199,6 @@ class BookingManager
             }
         }
 
-        // Anfahrtskosten
         $travelCostPerKm = defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50;
         $travelCost = $distance * $travelCostPerKm;
 
@@ -172,7 +206,7 @@ class BookingManager
     }
 
     /**
-     * Erstellt eine neue Buchung
+     * Erstellt eine neue Buchung - ERWEITERT mit Mehrfach-Slot-Blockierung
      */
     public function createBooking($appointmentId, $customerData, $serviceIds, $distance, $totalPrice)
     {
@@ -192,18 +226,36 @@ class BookingManager
             // Validiere Kundendaten
             $this->validateCustomerData($customerData);
 
-            // Appointment als gebucht markieren
-            $stmt = $this->db->prepare("UPDATE appointments SET status = 'booked' WHERE id = ? AND status = 'available'");
-            $stmt->execute([$appointmentId]);
+            // Berechne Gesamtdauer der Services
+            $totalDuration = $this->calculateTotalDuration($serviceIds);
+            $slotsNeeded = ceil($totalDuration / 60); // 60 Minuten pro Slot
 
-            if ($stmt->rowCount() === 0) {
-                throw new Exception("Termin konnte nicht reserviert werden");
+            // Hole Informationen zum Start-Appointment
+            $stmt = $this->db->prepare("SELECT date, time FROM appointments WHERE id = ?");
+            $stmt->execute([$appointmentId]);
+            $appointment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$appointment) {
+                throw new Exception("Termin nicht gefunden");
+            }
+
+            // Prüfe und blockiere alle benötigten Slots
+            $blockedSlots = $this->blockRequiredSlots(
+                $appointment['date'],
+                $appointment['time'],
+                $slotsNeeded,
+                $appointmentId
+            );
+
+            if (count($blockedSlots) < $slotsNeeded) {
+                throw new Exception("Nicht genügend aufeinanderfolgende Termine verfügbar");
             }
 
             // Buchung erstellen
             $stmt = $this->db->prepare("
                 INSERT INTO bookings 
-                (appointment_id, customer_name, customer_email, customer_phone, customer_address, distance, total_price) 
+                (appointment_id, customer_name, customer_email, customer_phone, 
+                 customer_address, distance, total_price) 
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
@@ -225,11 +277,12 @@ class BookingManager
 
             $this->db->commit();
 
-            // Log successful booking
             SecurityManager::logSecurityEvent('booking_created', [
                 'booking_id' => $bookingId,
                 'customer_email' => $customerData['email'],
-                'total_price' => $totalPrice
+                'total_price' => $totalPrice,
+                'duration_minutes' => $totalDuration,
+                'slots_blocked' => count($blockedSlots)
             ]);
 
             return $bookingId;
@@ -241,17 +294,68 @@ class BookingManager
     }
 
     /**
+     * Blockiert alle benötigten Termin-Slots
+     */
+    /**
+     * Blockiert alle benötigten Termin-Slots
+     */
+    private function blockRequiredSlots($date, $startTime, $slotsNeeded, $primaryAppointmentId)
+    {
+        $blockedSlots = [];
+
+        try {
+            // Konvertiere Start-Zeit zu Stunde
+            $startHour = intval(substr($startTime, 0, 2));
+
+            // Blockiere alle benötigten Slots
+            for ($i = 0; $i < $slotsNeeded; $i++) {
+                $slotTime = sprintf('%02d:00', $startHour + $i);
+
+                // Update Slot auf 'booked' - OHNE updated_at
+                $stmt = $this->db->prepare("
+                UPDATE appointments 
+                SET status = 'booked' 
+                WHERE date = ? AND time = ? AND status = 'available'
+            ");
+                $stmt->execute([$date, $slotTime]);
+
+                if ($stmt->rowCount() > 0) {
+                    // Hole die ID des gebuchten Slots
+                    $stmt = $this->db->prepare("
+                    SELECT id FROM appointments 
+                    WHERE date = ? AND time = ?
+                ");
+                    $stmt->execute([$date, $slotTime]);
+                    $slotId = $stmt->fetchColumn();
+
+                    if ($slotId) {
+                        $blockedSlots[] = $slotId;
+                    }
+                }
+            }
+
+            // Log die blockierten Slots
+            if (!empty($blockedSlots)) {
+                error_log("Successfully blocked " . count($blockedSlots) . " slots for date $date starting at $startTime");
+            }
+
+            return $blockedSlots;
+        } catch (PDOException $e) {
+            error_log("Error blocking slots: " . $e->getMessage());
+            throw new Exception("Fehler beim Blockieren der Termine");
+        }
+    }
+
+    /**
      * Fügt Services zu einer Buchung hinzu
      */
     private function addServicesToBooking($bookingId, $serviceIds)
     {
-        // Hole aktuelle Preise der Services
         $placeholders = str_repeat('?,', count($serviceIds) - 1) . '?';
         $stmt = $this->db->prepare("SELECT id, price FROM services WHERE id IN ($placeholders) AND active = 1");
         $stmt->execute($serviceIds);
         $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Füge Services mit aktuellen Preisen hinzu
         $stmt = $this->db->prepare("INSERT INTO booking_services (booking_id, service_id, price_at_booking) VALUES (?, ?, ?)");
         foreach ($services as $service) {
             $stmt->execute([$bookingId, $service['id'], $service['price']]);
@@ -274,7 +378,6 @@ class BookingManager
             $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($booking) {
-                // Services laden
                 $stmt = $this->db->prepare("
                     SELECT s.name, s.description, bs.price_at_booking as price, s.duration
                     FROM services s 
@@ -319,14 +422,48 @@ class BookingManager
     }
 
     /**
-     * Prüft ob Termin verfügbar ist
+     * Prüft ob Termin mit genügend Folge-Slots verfügbar ist
      */
-    private function isAppointmentAvailable($appointmentId)
+    private function isAppointmentAvailable($appointmentId, $slotsNeeded = 1)
     {
         try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM appointments WHERE id = ? AND status = 'available'");
+            // Hole Appointment-Details
+            $stmt = $this->db->prepare("
+                SELECT date, time, status 
+                FROM appointments 
+                WHERE id = ?
+            ");
             $stmt->execute([$appointmentId]);
-            return $stmt->fetchColumn() > 0;
+            $appointment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$appointment || $appointment['status'] !== 'available') {
+                return false;
+            }
+
+            // Wenn nur ein Slot benötigt wird
+            if ($slotsNeeded <= 1) {
+                return true;
+            }
+
+            // Prüfe nachfolgende Slots
+            $startHour = intval(substr($appointment['time'], 0, 2));
+
+            for ($i = 1; $i < $slotsNeeded; $i++) {
+                $nextTime = sprintf('%02d:00', $startHour + $i);
+
+                $stmt = $this->db->prepare("
+                    SELECT COUNT(*) 
+                    FROM appointments 
+                    WHERE date = ? AND time = ? AND status = 'available'
+                ");
+                $stmt->execute([$appointment['date'], $nextTime]);
+
+                if ($stmt->fetchColumn() == 0) {
+                    return false;
+                }
+            }
+
+            return true;
         } catch (PDOException $e) {
             return false;
         }
@@ -369,7 +506,6 @@ class BookingManager
             return false;
         }
 
-        // Datum darf nicht in der Vergangenheit liegen
         $today = new DateTime();
         if ($dateObj < $today) {
             return false;
@@ -439,9 +575,9 @@ class BookingManager
             $stmt = $this->db->prepare("UPDATE bookings SET status = ? WHERE id = ?");
             $stmt->execute([$status, $bookingId]);
 
-            // Bei Stornierung: Termin wieder freigeben
+            // Bei Stornierung: Alle blockierten Termine wieder freigeben
             if ($status === 'cancelled') {
-                $this->releaseAppointment($bookingId);
+                $this->releaseAllBlockedSlots($bookingId);
             }
 
             return $stmt->rowCount() > 0;
@@ -452,19 +588,56 @@ class BookingManager
     }
 
     /**
-     * Gibt Termin bei Stornierung frei
+     * Gibt alle blockierten Termine bei Stornierung frei
      */
-    private function releaseAppointment($bookingId)
+    private function releaseAllBlockedSlots($bookingId)
     {
         try {
+            // Hole Booking-Details
             $stmt = $this->db->prepare("
-                UPDATE appointments 
-                SET status = 'available' 
-                WHERE id = (SELECT appointment_id FROM bookings WHERE id = ?)
+                SELECT b.appointment_id, a.date, a.time 
+                FROM bookings b 
+                JOIN appointments a ON b.appointment_id = a.id 
+                WHERE b.id = ?
             ");
             $stmt->execute([$bookingId]);
+            $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$booking) {
+                return;
+            }
+
+            // Berechne Dauer der gebuchten Services
+            $stmt = $this->db->prepare("
+                SELECT SUM(s.duration) as total_duration
+                FROM booking_services bs
+                JOIN services s ON bs.service_id = s.id
+                WHERE bs.booking_id = ?
+            ");
+            $stmt->execute([$bookingId]);
+            $totalDuration = $stmt->fetchColumn() ?: 60;
+            $slotsToRelease = ceil($totalDuration / 60);
+
+            // Gib alle Slots frei
+            $startHour = intval(substr($booking['time'], 0, 2));
+
+            for ($i = 0; $i < $slotsToRelease; $i++) {
+                $slotTime = sprintf('%02d:00', $startHour + $i);
+
+                $stmt = $this->db->prepare("
+                    UPDATE appointments 
+                    SET status = 'available' 
+                    WHERE date = ? AND time = ? AND status = 'booked'
+                ");
+                $stmt->execute([$booking['date'], $slotTime]);
+            }
+
+            SecurityManager::logSecurityEvent('booking_cancelled_slots_released', [
+                'booking_id' => $bookingId,
+                'slots_released' => $slotsToRelease
+            ]);
         } catch (PDOException $e) {
-            error_log("Error releasing appointment: " . $e->getMessage());
+            error_log("Error releasing appointment slots: " . $e->getMessage());
         }
     }
 
@@ -477,7 +650,8 @@ class BookingManager
             $sql = "
                 SELECT b.*, a.date, a.time, 
                        GROUP_CONCAT(s.name, ', ') as services,
-                       COUNT(bs.service_id) as service_count
+                       COUNT(bs.service_id) as service_count,
+                       SUM(s.duration) as total_duration
                 FROM bookings b 
                 JOIN appointments a ON b.appointment_id = a.id 
                 LEFT JOIN booking_services bs ON b.id = bs.booking_id
