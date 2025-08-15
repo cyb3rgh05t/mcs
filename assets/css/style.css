@@ -58,7 +58,6 @@
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
-  background: var(--clr-surface-a0);
   color: var(--clr-primary-a0);
   min-height: 100vh;
   line-height: 1.6;
@@ -77,10 +76,7 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  /* Beispiel-Hintergrundbild - ersetzen Sie mit Ihrem eigenen */
-  background-image: url("../images/background.jpg");
-  /* Alternativ: Gradient als Fallback */
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+  background: url("../images/body.jpg");
   background-size: cover;
   background-position: center;
   background-attachment: fixed;

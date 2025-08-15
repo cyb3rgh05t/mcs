@@ -87,7 +87,7 @@ try {
     }
 
     // Business location (configurable)
-    $business_address = defined('BUSINESS_ADDRESS') ? BUSINESS_ADDRESS : 'Rheine, Deutschland';
+    $business_address = defined('BUSINESS_ADDRESS') ? BUSINESS_ADDRESS : 'Herne, Deutschland';
 
     // Prepare Google Maps API request
     $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?' . http_build_query([
@@ -269,171 +269,161 @@ function estimateDistanceFromAddress($address)
 
     // Entfernungen von Rheine zu verschiedenen Städten/Regionen
     $distance_map = [
-        // Lokale Umgebung (Kreis Steinfurt)
-        'rheine' => 3,
-        'emsdetten' => 12,
-        'steinfurt' => 18,
-        'horstmar' => 15,
-        'laer' => 20,
-        'altenberge' => 25,
+        // Direkte Umgebung (Ruhrgebiet)
+        'herne' => 3,
+        'bochum' => 8,
+        'gelsenkirchen' => 10,
+        'recklinghausen' => 12,
+        'castrop-rauxel' => 8,
+        'wanne-eickel' => 5,
+        'gladbeck' => 12,  // KORRIGIERT: vorher 120km
+        'bottrop' => 15,
+        'herten' => 10,
 
-        // Emsland
-        'lingen' => 35,
-        'meppen' => 55,
-        'papenburg' => 65,
-        'haren' => 45,
+        // Nahes Ruhrgebiet
+        'essen' => 20,
+        'dortmund' => 20,
+        'witten' => 12,
+        'oberhausen' => 22,
+        'duisburg' => 28,
+        'mülheim' => 25,
+        'hamm' => 35,
+        'unna' => 30,
 
-        // Münsterland
-        'münster' => 45,
-        'greven' => 30,
-        'ibbenbüren' => 25,
-        'lengerich' => 30,
-        'tecklenburg' => 35,
-        'hopsten' => 20,
-        'mettingen' => 30,
-        'recke' => 15,
-        'westerkappeln' => 35,
+        // Weitere Ruhrgebietsstädte
+        'wuppertal' => 35,
+        'solingen' => 40,
+        'remscheid' => 45,
+        'hagen' => 30,
+        'iserlohn' => 45,
+        'lüdenscheid' => 50,
 
-        // Osnabrück Region
-        'osnabrück' => 55,
-        'bramsche' => 45,
-        'georgsmarienhütte' => 60,
-        'wallenhorst' => 50,
+        // Düsseldorf & Umgebung
+        'düsseldorf' => 45,
+        'neuss' => 40,
+        'krefeld' => 35,
+        'mönchengladbach' => 45,
+        'viersen' => 50,
+
+        // Köln & Umgebung  
+        'köln' => 80,
+        'leverkusen' => 55,
+        'bergisch gladbach' => 65,
+        'bonn' => 100,
+        'troisdorf' => 90,
 
         // Niederrhein
-        'wesel' => 85,
-        'moers' => 90,
-        'krefeld' => 95,
-        'viersen' => 100,
+        'wesel' => 40,
+        'moers' => 30,
+        'dinslaken' => 25,
+        'voerde' => 35,
+        'kleve' => 70,
 
-        // Ruhrgebiet
-        'duisburg' => 95,
-        'oberhausen' => 85,
-        'essen' => 90,
-        'gelsenkirchen' => 80,
-        'bochum' => 85,
-        'dortmund' => 80,
-        'hagen' => 95,
-        'wuppertal' => 105,
+        // Münsterland (KORRIGIERT)
+        'münster' => 65,
+        'rheine' => 85,  // KORRIGIERT: Rheine ist 85km von Herne
+        'emsdetten' => 95,
+        'steinfurt' => 100,
+        'coesfeld' => 45,
+        'borken' => 50,
+        'ahaus' => 65,
+        'gronau' => 75,
 
-        // Rheinland
-        'düsseldorf' => 120,
-        'köln' => 150,
-        'bonn' => 160,
-        'aachen' => 180,
-        'mönchengladbach' => 110,
+        // Sauerland
+        'arnsberg' => 50,
+        'meschede' => 70,
+        'sundern' => 60,
+        'brilon' => 85,
+        'winterberg' => 100,
 
-        // Westfalen
-        'bielefeld' => 70,
-        'gütersloh' => 60,
-        'paderborn' => 90,
-        'hamm' => 70,
-        'unna' => 80,
-        'soest' => 85,
-        'arnsberg' => 100,
-        'iserlohn' => 105,
-        'lüdenscheid' => 110,
-        'siegen' => 130,
+        // Ostwestfalen
+        'bielefeld' => 110,
+        'gütersloh' => 100,
+        'paderborn' => 120,
+        'detmold' => 130,
+        'minden' => 120,
+        'herford' => 115,
+
+        // Bergisches Land
+        'siegen' => 90,
+        'gummersbach' => 70,
+        'attendorn' => 75,
+
+        // Aachen Region
+        'aachen' => 120,
+        'düren' => 90,
+        'eschweiler' => 110,
+        'stolberg' => 115,
+
+        // Weitere NRW Städte
+        'koblenz' => 150,
+        'trier' => 200,
+        'mainz' => 180,
+        'wiesbaden' => 180,
+        'frankfurt' => 200,
 
         // Niedersachsen
-        'hannover' => 130,
-        'braunschweig' => 180,
+        'osnabrück' => 130,
+        'hannover' => 200,
+        'braunschweig' => 250,
         'göttingen' => 200,
-        'hildesheim' => 150,
-        'salzgitter' => 170,
-        'wolfsburg' => 200,
-        'celle' => 120,
-        'lüneburg' => 150,
-        'stade' => 170,
-        'bremen' => 150,
-        'oldenburg' => 120,
-        'wilhelmshaven' => 160,
-        'emden' => 140,
-        'aurich' => 130,
-        'leer' => 120,
+        'oldenburg' => 180,
+        'bremen' => 200,
 
-        // Niederlande
-        'enschede' => 45,
-        'hengelo' => 55,
-        'almelo' => 60,
-        'deventer' => 80,
-        'zwolle' => 95,
-        'amsterdam' => 200,
-        'rotterdam' => 180,
-        'den haag' => 190,
-        'utrecht' => 170,
-        'eindhoven' => 120,
-        'tilburg' => 130,
-        'breda' => 140,
-        'nijmegen' => 100,
-        'arnhem' => 110,
-        'apeldoorn' => 120,
-        'groningen' => 150,
-
-        // Weitere deutsche Großstädte
-        'hamburg' => 250,
-        'berlin' => 450,
-        'münchen' => 550,
-        'frankfurt' => 300,
+        // Große Städte Deutschland
+        'hamburg' => 320,
+        'berlin' => 500,
+        'münchen' => 600,
         'stuttgart' => 400,
         'nürnberg' => 400,
         'dresden' => 500,
         'leipzig' => 400,
         'karlsruhe' => 350,
         'mannheim' => 320,
-        'augsburg' => 500,
-        'wiesbaden' => 300,
-        'chemnitz' => 500,
-        'kiel' => 280,
-        'magdeburg' => 350,
-        'freiburg' => 450,
-        'lübeck' => 270,
-        'erfurt' => 350,
-        'halle' => 380,
-        'rostock' => 320,
-        'kassel' => 250,
-        'mainz' => 300,
-        'saarbrücken' => 350,
-        'ludwigshafen' => 320,
-        'mülheim' => 90,
-        'leverkusen' => 130,
-        'solingen' => 110,
-        'herne' => 85,
-        'neuss' => 120
+        'augsburg' => 550,
+
+        // Niederlande (von Herne aus)
+        'venlo' => 60,
+        'roermond' => 70,
+        'eindhoven' => 100,
+        'maastricht' => 120,
+        'nijmegen' => 90,
+        'arnhem' => 85,
+        'utrecht' => 150,
+        'amsterdam' => 180,
+        'rotterdam' => 160,
+        'den haag' => 170,
+        'groningen' => 220,
+        'enschede' => 100,
     ];
 
-    // Suche nach Städtenamen in der Adresse
-    foreach ($distance_map as $city => $distance) {
-        if (strpos($address, $city) !== false) {
-            // Kleine Variation hinzufügen für Realismus
-            return $distance + rand(-2, 5);
-        }
+    // PLZ-basierte Schätzung (angepasst für Herne als Zentrum)
+    if (preg_match('/\b(446\d{2}|447\d{2})\b/', $address)) {
+        return rand(3, 15); // Herne und direkte Umgebung
     }
 
-    // PLZ-basierte Schätzung
-    if (preg_match('/\b(484\d{2}|483\d{2})\b/', $address)) {
-        return rand(5, 25); // Rheine und direkte Umgebung
+    if (preg_match('/\b(44\d{3})\b/', $address)) {
+        return rand(10, 30); // Ruhrgebiet
     }
 
-    if (preg_match('/\b(485\d{2}|486\d{2}|487\d{2}|488\d{2}|489\d{2})\b/', $address)) {
-        return rand(15, 45); // Münsterland/Emsland
+    if (preg_match('/\b(45\d{3}|46\d{3}|47\d{3})\b/', $address)) {
+        return rand(15, 50); // Erweitertes Ruhrgebiet/Niederrhein
+    }
+
+    if (preg_match('/\b(40\d{3}|41\d{3}|42\d{3})\b/', $address)) {
+        return rand(30, 60); // Düsseldorf/Wuppertal Region
     }
 
     if (preg_match('/\b(48\d{3}|49\d{3})\b/', $address)) {
-        return rand(20, 80); // NRW/Niedersachsen allgemein
+        return rand(50, 120); // Münsterland/Osnabrück
     }
 
-    if (preg_match('/\b(4\d{4})\b/', $address)) {
-        return rand(40, 150); // Deutschland West
+    if (preg_match('/\b(50\d{3}|51\d{3}|52\d{3}|53\d{3})\b/', $address)) {
+        return rand(60, 150); // Köln/Bonn/Aachen Region
     }
 
-    if (preg_match('/\b([1-3]\d{4}|[5-9]\d{4})\b/', $address)) {
-        return rand(100, 300); // Andere deutsche PLZ-Bereiche
-    }
-
-    // Niederländische PLZ
-    if (preg_match('/\b(7\d{3}\s?[A-Z]{2})\b/', $address)) {
-        return rand(40, 120); // Niederlande
+    if (preg_match('/\b(5[4-9]\d{3})\b/', $address)) {
+        return rand(70, 200); // Südliches NRW/Rheinland-Pfalz
     }
 
     // Standard für unbekannte Adressen

@@ -108,7 +108,7 @@ class EmailManager
         $businessName = defined('BUSINESS_NAME') ? BUSINESS_NAME : 'MCS Mobile Car Solutions';
         $businessPhone = defined('BUSINESS_PHONE') ? BUSINESS_PHONE : '+49 123 456789';
         $businessEmail = defined('BUSINESS_EMAIL') ? BUSINESS_EMAIL : 'info@mcs-mobile.de';
-        $businessAddress = defined('BUSINESS_ADDRESS') ? BUSINESS_ADDRESS : 'Musterstraße 123, 48431 Rheine';
+        $businessAddress = defined('BUSINESS_ADDRESS') ? BUSINESS_ADDRESS : 'Hüllerstraße 16, 44649 Herne';
 
         // Services HTML generieren
         $servicesHtml = '';

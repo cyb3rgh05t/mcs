@@ -96,7 +96,7 @@ function createConfigFile($data)
 
 // Business Configuration
 define(\'BUSINESS_NAME\', \'' . addslashes($data['business_name'] ?? 'MCS Mobile Car Solutions') . '\');
-define(\'BUSINESS_ADDRESS\', \'' . addslashes($data['business_address'] ?? 'Musterstraße 123, 48431 Rheine') . '\');
+define(\'BUSINESS_ADDRESS\', \'' . addslashes($data['business_address'] ?? 'Hüllerstraße 16, 44649 Herne') . '\');
 define(\'BUSINESS_PHONE\', \'' . addslashes($data['business_phone'] ?? '+49 123 456789') . '\');
 define(\'BUSINESS_EMAIL\', \'' . addslashes($data['business_email'] ?? 'info@mcs-mobile.de') . '\');
 define(\'BUSINESS_WEBSITE\', \'' . addslashes($data['business_website'] ?? 'www.mcs-mobile.de') . '\');
@@ -804,7 +804,7 @@ function checkSystemRequirements()
                     <div class="form-group">
                         <label class="form-label">Geschäftsadresse</label>
                         <input type="text" name="business_address" class="form-input"
-                            value="<?= $installation_data['business_address'] ?? 'Musterstraße 123, 48431 Rheine' ?>" required>
+                            value="<?= $installation_data['business_address'] ?? 'Hüllerstraße 16, 44649 Herne' ?>" required>
                         <div class="help-text">Vollständige Adresse für Entfernungsberechnungen</div>
                     </div>
 

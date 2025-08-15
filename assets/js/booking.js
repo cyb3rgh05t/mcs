@@ -259,7 +259,7 @@ function enableFallbackAddressInput() {
 
 // Distance Calculation (verbesserte Version)
 function calculateDistance(destination) {
-  const businessLocation = { lat: 52.2789, lng: 7.5081 }; // Rheine, Deutschland
+  const businessLocation = { lat: 51.5255222, lng: 7.1401009 }; // Rheine, Deutschland
 
   if (typeof google === "undefined" || !google.maps) {
     console.warn("Google Maps nicht verfügbar für Entfernungsberechnung");
