@@ -1,5 +1,5 @@
 <?php
-// index.php - KORREKTE Hauptseite für Kundenbuchungen
+// index.php - Hauptbuchungsseite mit vollständiger Sicherheit
 session_start();
 
 // Include all required classes

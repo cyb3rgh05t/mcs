@@ -1,23 +1,40 @@
 <?php
-// views/step3_services.php
+// views/step3_services.php - Leistungsauswahl mit Preisberechnung
 $services = $bookingManager->getAllServices();
 ?>
 
 <h2 class="step-title">Wählen Sie Ihre Leistungen</h2>
 <p class="step-description">Welche Services sollen wir für Sie durchführen? Sie können mehrere Leistungen auswählen.</p>
 
-<form method="POST" action="?step=3">
+<form method="POST" action="?step=3" id="services-form">
+    <input type="hidden" name="csrf_token" value="<?= SecurityManager::generateCSRFToken() ?>">
+    <?= SecurityManager::generateHoneypot() ?>
+
     <div class="services-grid">
         <?php foreach ($services as $service): ?>
-            <div class="service-card" onclick="toggleService(<?= $service['id'] ?>, this)">
-                <input type="checkbox" name="services[]" value="<?= $service['id'] ?>" id="service_<?= $service['id'] ?>">
+            <div class="service-card" onclick="toggleService(<?= $service['id'] ?>, this)" role="button" tabindex="0">
+                <input type="checkbox" name="services[]" value="<?= $service['id'] ?>" id="service_<?= $service['id'] ?>" style="display: none;">
 
-                <div class="service-name"><?= htmlspecialchars($service['name']) ?></div>
-                <div class="service-description"><?= htmlspecialchars($service['description']) ?></div>
-                <div class="service-price"><?= number_format($service['price'], 2) ?> €</div>
-                <div class="service-duration">Dauer: ca. <?= $service['duration'] ?> Min.</div>
+                <div class="service-checkbox">
+                    <span class="checkmark">✓</span>
+                </div>
+
+                <div class="service-content">
+                    <div class="service-name"><?= htmlspecialchars($service['name']) ?></div>
+                    <div class="service-description"><?= htmlspecialchars($service['description']) ?></div>
+                    <div class="service-meta">
+                        <div class="service-price"><?= number_format($service['price'], 2, ',', '.') ?> €</div>
+                        <div class="service-duration">ca. <?= $service['duration'] ?> Min.</div>
+                    </div>
+                </div>
             </div>
         <?php endforeach; ?>
+
+        <?php if (empty($services)): ?>
+            <div class="no-services-available">
+                <p>Aktuell sind keine Services verfügbar. Bitte kontaktieren Sie uns direkt.</p>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="selected-services-summary" id="services-summary" style="display: none;">
@@ -82,7 +99,7 @@ $services = $bookingManager->getAllServices();
                 html += `
                 <div class="summary-item">
                     <span class="summary-label">${service.name}</span>
-                    <span class="summary-value">${parseFloat(service.price).toFixed(2)} €</span>
+                    <span class="summary-value">${parseFloat(service.price).toFixed(2).replace('.', ',')} €</span>
                 </div>
             `;
                 total += parseFloat(service.price);
@@ -90,6 +107,6 @@ $services = $bookingManager->getAllServices();
         });
 
         listEl.innerHTML = html;
-        totalEl.textContent = total.toFixed(2) + ' €';
+        totalEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
     }
 </script>
