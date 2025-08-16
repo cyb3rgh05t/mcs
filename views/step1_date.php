@@ -170,6 +170,7 @@ $availableDates = $bookingManager->getAvailableDates(90);
 <script>
     // Verfügbare Termine von PHP
     const availableDates = <?= json_encode($availableDates) ?>;
+    const workingDays = <?= json_encode(WORKING_DAYS) ?>; // NEU: Arbeitstage aus Config
     let currentDate = new Date();
     let selectedDate = null;
 
@@ -212,6 +213,10 @@ $availableDates = $bookingManager->getAvailableDates(90);
 
             const dateStr = date.toISOString().split('T')[0];
 
+            // NEU: Konvertiere JavaScript Wochentag zu ISO Format
+            const jsWeekday = date.getDay(); // 0=So, 1=Mo, 2=Di, 3=Mi, 4=Do, 5=Fr, 6=Sa
+            const isoWeekday = jsWeekday === 0 ? 7 : jsWeekday; // 1=Mo, 2=Di, 3=Mi, 4=Do, 5=Fr, 6=Sa, 7=So
+
             // Check if date is in current month
             if (date.getMonth() !== month) {
                 dayDiv.classList.add('other-month');
@@ -227,7 +232,8 @@ $availableDates = $bookingManager->getAvailableDates(90);
                     dayDiv.addEventListener('click', function() {
                         selectDate(date, dateStr, this);
                     });
-                } else if (date < today || date.getDay() === 0) {
+                    // KORRIGIERT: Prüfe ob vergangen ODER kein Arbeitstag
+                } else if (date < today || !workingDays.includes(isoWeekday)) {
                     dayDiv.classList.add('disabled');
                 }
             }

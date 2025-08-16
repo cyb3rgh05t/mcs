@@ -533,7 +533,12 @@ function updateServicesSummary() {
 }
 
 // Date/Time Selection Functions
-function selectDate(date, element) {
+function selectDate(date, dateStr, element) {
+  // Falls nur 2 Parameter übergeben wurden (alte Aufrufe)
+  if (typeof dateStr === "object" && dateStr !== null && !element) {
+    element = dateStr;
+    dateStr = date;
+  }
   // Alle anderen Optionen deselektieren
   document
     .querySelectorAll(".date-option")
@@ -544,7 +549,7 @@ function selectDate(date, element) {
 
   // Hidden field setzen
   const hiddenField = document.getElementById("selected_date");
-  if (hiddenField) hiddenField.value = date;
+  if (hiddenField) hiddenField.value = dateStr || date;
 
   // Continue Button aktivieren
   const continueBtn = document.getElementById("continue-btn");
