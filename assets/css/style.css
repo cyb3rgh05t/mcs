@@ -468,32 +468,68 @@ body::after {
 /* Individuelle Service-Hintergründe */
 .service-card[data-service-id="1"] {
   background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
-    url("../images/services/wash.jpg") center/cover;
+    url("../images/services/sorglos.jpg") center/cover;
 }
 
 .service-card[data-service-id="2"] {
   background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
-    url("../images/services/complete.jpg") center/cover;
+    url("../images/services/verkaufsklar.jpg") center/cover;
 }
 
 .service-card[data-service-id="3"] {
   background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
-    url("../images/services/interior.jpg") center/cover;
+    url("../images/services/check.jpg") center/cover;
 }
 
 .service-card[data-service-id="4"] {
   background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
-    url("../images/services/engine.jpg") center/cover;
+    url("../images/services/verkaufsklar.jpg") center/cover;
 }
 
 .service-card[data-service-id="5"] {
   background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
-    url("../images/services/wheels.jpg") center/cover;
+    url("../images/services/sorglos.jpg") center/cover;
 }
 
 .service-card[data-service-id="6"] {
   background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
-    url("../images/services/polish.jpg") center/cover;
+    url("../images/services/komfort.jpg") center/cover;
+}
+.service-card[data-service-id="7"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/rader.jpg") center/cover;
+}
+.service-card[data-service-id="8"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/hilfe.jpg") center/cover;
+}
+.service-card[data-service-id="9"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/wash.jpg") center/cover;
+}
+.service-card[data-service-id="10"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/check.jpg") center/cover;
+}
+.service-card[data-service-id="11"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/washcare.jpg") center/cover;
+}
+.service-card[data-service-id="12"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/wash2.jpg") center/cover;
+}
+.service-card[data-service-id="13"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/wash2.jpg") center/cover;
+}
+.service-card[data-service-id="14"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/batterie.jpg") center/cover;
+}
+.service-card[data-service-id="15"] {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+    url("../images/services/ersatz.jpg") center/cover;
 }
 
 .service-card:hover {
@@ -1286,4 +1322,400 @@ body::after {
   font-size: 14px;
   color: var(--clr-warning);
   backdrop-filter: blur(10px);
+}
+
+/* ================================
+   ZUSÄTZLICHE STYLES FÜR ADMIN & STEPS
+   Füge diese am Ende deiner style.css hinzu
+   ================================ */
+
+/* Admin-spezifische Styles */
+.admin-user {
+  color: var(--clr-primary-a30);
+  font-weight: 500;
+}
+
+.text-muted {
+  color: var(--clr-primary-a50);
+  font-size: 12px;
+}
+
+.no-data {
+  text-align: center;
+  color: var(--clr-primary-a40);
+  padding: 40px 20px;
+  font-size: 16px;
+}
+
+.btn-small {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+}
+
+.form-help {
+  color: var(--clr-primary-a40);
+  font-size: 14px;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-label {
+  color: var(--clr-primary-a40);
+  font-size: 14px;
+}
+
+.info-value {
+  color: var(--clr-primary-a0);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.admin-info {
+  margin-top: 20px;
+  text-align: center;
+  color: var(--clr-primary-a50);
+  font-size: 12px;
+}
+
+/* Step Views - Konsistente Styles */
+.customer-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.service-card {
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--clr-surface-a30);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.service-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--clr-primary-a0);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.1);
+}
+
+.service-card.selected {
+  background: rgba(11, 128, 7, 0.2);
+  border-color: var(--clr-success);
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
+
+.service-checkbox {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--clr-primary-a40);
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.service-card.selected .service-checkbox {
+  background: var(--clr-success);
+  border-color: var(--clr-success);
+}
+
+.service-checkbox .checkmark {
+  color: var(--clr-primary-a0);
+  font-size: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.service-card.selected .checkmark {
+  opacity: 1;
+}
+
+.service-content {
+  padding-right: 40px;
+}
+
+.service-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--clr-primary-a0);
+  margin-bottom: 8px;
+}
+
+.service-description {
+  color: var(--clr-primary-a40);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.service-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.service-price {
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--clr-primary-a0);
+}
+
+.service-duration {
+  color: var(--clr-primary-a50);
+  font-size: 14px;
+}
+
+/* Time Selection Styles */
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.time-slot {
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--clr-surface-a30);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.time-slot:hover {
+  transform: translateY(-2px);
+  border-color: var(--clr-primary-a0);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.time-slot.selected {
+  background: rgba(11, 128, 7, 0.2);
+  border-color: var(--clr-success);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+}
+
+.time-slot input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.time-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--clr-primary-a0);
+}
+
+.time-label {
+  font-size: 12px;
+  color: var(--clr-primary-a50);
+  margin-top: 4px;
+}
+
+/* Entfernungs-Info Box */
+.distance-info {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid var(--clr-warning);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 30px;
+  backdrop-filter: blur(10px);
+}
+
+.distance-info h4 {
+  color: var(--clr-warning);
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.distance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.distance-item strong {
+  color: var(--clr-primary-a0);
+  font-weight: 600;
+}
+
+#travel-cost-info {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 20px;
+}
+
+#travel-cost-display {
+  color: var(--clr-warning);
+  font-weight: 600;
+}
+
+#travel-cost-details {
+  color: var(--clr-primary-a50);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Confirmation Styles */
+.booking-number-display {
+  background: rgba(30, 30, 30, 0.9);
+  border: 2px solid var(--clr-success);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  text-align: center;
+  margin: 30px auto;
+  max-width: 400px;
+  backdrop-filter: blur(10px);
+}
+
+.booking-number-label {
+  font-size: 14px;
+  color: var(--clr-primary-a50);
+  margin-bottom: 8px;
+}
+
+.booking-number-value {
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--clr-primary-a0);
+  letter-spacing: 2px;
+}
+
+.booking-number-hint {
+  font-size: 12px;
+  color: var(--clr-primary-a40);
+  margin-top: 8px;
+}
+
+/* Calendar Improvements */
+.calendar-container {
+  user-select: none;
+}
+
+.calendar-nav {
+  background: transparent;
+  border: 1px solid var(--clr-surface-a30);
+  color: var(--clr-primary-a0);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-nav:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--clr-primary-a0);
+}
+
+.calendar-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+  .admin-table {
+    font-size: 12px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 8px;
+  }
+
+  .distance-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  #travel-cost-info {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 0;
+    padding-top: 15px;
+    margin-top: 15px;
+  }
+}
+
+/* Form Validation Feedback */
+.form-input.error {
+  border-color: var(--clr-error) !important;
+  background: rgba(244, 67, 54, 0.05);
+}
+
+.form-input.success {
+  border-color: var(--clr-success) !important;
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.form-error {
+  color: var(--clr-error);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Loading Animation für Buttons */
+.btn-primary.loading,
+.btn-secondary.loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.btn-primary.loading::after,
+.btn-secondary.loading::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  margin-left: -10px;
+  margin-top: -10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--clr-primary-a0);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }

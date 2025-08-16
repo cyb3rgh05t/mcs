@@ -1,5 +1,5 @@
 <?php
-// views/step4_services.php - Leistungsauswahl mit Entfernungsvalidierung
+// views/step4_services.php - Modernisierte Leistungsauswahl
 $services = $bookingManager->getAllServices();
 $customerDistance = $_SESSION['booking']['distance'] ?? 0;
 ?>
@@ -8,16 +8,18 @@ $customerDistance = $_SESSION['booking']['distance'] ?? 0;
 <p class="step-description">Welche Services sollen wir für Sie durchführen? Sie können mehrere Leistungen auswählen.</p>
 
 <!-- Entfernungs- und Kosteninformation -->
-<div style="background: rgba(255, 107, 53, 0.1); border: 1px solid #ff6b35; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
-    <h4 style="color: #ff6b35; margin-bottom: 15px;">📍 Ihre Anfahrtsinformationen</h4>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+<div class="distance-info">
+    <h4>📍 Ihre Anfahrtsinformationen</h4>
+    <div class="distance-grid">
         <div>
             <strong>Entfernung:</strong> <?= number_format($customerDistance, 1) ?> km<br>
-            <strong>Adresse:</strong> <?= htmlspecialchars($_SESSION['booking']['customer']['address'] ?? '') ?>
+            <strong>Adresse:</strong><br>
+            <small><?= htmlspecialchars($_SESSION['booking']['customer']['address'] ?? '') ?></small>
         </div>
         <div id="travel-cost-info">
-            <strong>Anfahrtskosten:</strong> <span id="travel-cost-display">Werden basierend auf Ihrer Auswahl berechnet</span><br>
-            <small style="color: #ccc;" id="travel-cost-details">Wählen Sie Leistungen aus, um die Anfahrtskosten zu sehen</small>
+            <strong>Anfahrtskosten:</strong>
+            <span id="travel-cost-display">Werden berechnet...</span><br>
+            <small id="travel-cost-details">Wählen Sie Leistungen aus</small>
         </div>
     </div>
 </div>
@@ -57,155 +59,121 @@ $customerDistance = $_SESSION['booking']['distance'] ?? 0;
                 </div>
             </div>
         <?php endforeach; ?>
-
-        <?php if (empty($services)): ?>
-            <div class="no-services-available">
-                <p>Aktuell sind keine Services verfügbar.</p>
-                <p>Bitte kontaktieren Sie uns direkt unter <?= defined('BUSINESS_PHONE') ? BUSINESS_PHONE : '+49 123 456789' ?></p>
-            </div>
-        <?php endif; ?>
     </div>
 
-    <!-- Preisübersicht -->
-    <div class="price-summary" style="background: rgba(30, 30, 30, 0.9); border: 1px solid #4e4e4e; border-radius: 8px; padding: 20px; margin-top: 30px;">
-        <h3 style="color: #ff6b35; margin-bottom: 15px;">💰 Kostenübersicht</h3>
-        <div class="price-details">
-            <div class="price-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span>Leistungen:</span>
-                <span id="services-total">0,00 €</span>
-            </div>
-            <div class="price-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span>Anfahrt:</span>
-                <span id="travel-total">0,00 €</span>
-            </div>
-            <div class="price-row" style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #ff6b35; font-size: 20px; font-weight: bold;">
-                <span>Gesamtpreis:</span>
-                <span id="total-price" style="color: #ff6b35;">0,00 €</span>
-            </div>
+    <!-- Ausgewählte Services Zusammenfassung -->
+    <div class="summary-section" id="selected-services-summary" style="display: none;">
+        <div class="summary-title">Ihre Auswahl</div>
+        <div id="selected-services-list"></div>
+        <div class="summary-item" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--clr-surface-a30);">
+            <span class="summary-label">Services:</span>
+            <span class="summary-value" id="services-subtotal">0,00 €</span>
         </div>
-
-        <!-- Warnungen/Hinweise -->
-        <div id="distance-validation-message" style="margin-top: 20px; padding: 15px; border-radius: 5px; display: none;">
-            <span id="validation-icon"></span>
-            <span id="validation-text"></span>
+        <div class="summary-item">
+            <span class="summary-label">Anfahrtskosten:</span>
+            <span class="summary-value" id="travel-cost-summary">0,00 €</span>
+        </div>
+        <div class="summary-item" style="font-size: 20px; font-weight: 600;">
+            <span class="summary-label">Gesamtpreis:</span>
+            <span class="summary-value total-price" id="total-price">0,00 €</span>
         </div>
     </div>
 
-    <div class="btn-group" style="margin-top: 30px;">
+    <div class="btn-group">
         <a href="?step=3" class="btn-secondary">Zurück</a>
         <button type="submit" class="btn-primary" id="continue-btn" disabled>Weiter zur Zusammenfassung</button>
     </div>
 </form>
 
 <script>
-    // Konfiguration aus PHP
-    const travelConfig = {
-        distance: <?= $customerDistance ?>,
-        costPerKm: <?= TRAVEL_COST_PER_KM ?>,
-        freeKm: <?= TRAVEL_FREE_KM ?>,
-        minServiceAmount: <?= TRAVEL_MIN_SERVICE_AMOUNT ?>,
-        maxDistanceSmall: <?= TRAVEL_MAX_DISTANCE_SMALL ?>,
-        maxDistanceLarge: <?= TRAVEL_MAX_DISTANCE_LARGE ?>
-    };
+    const customerDistance = <?= $customerDistance ?>;
+    let selectedServices = [];
 
-    // Service-Auswahl Toggle
     function toggleServiceSelection(card) {
         const checkbox = card.querySelector('input[type="checkbox"]');
+        const serviceId = card.dataset.serviceId;
+        const serviceName = card.dataset.serviceName;
+        const servicePrice = parseFloat(card.dataset.servicePrice);
+        const serviceDuration = parseInt(card.dataset.serviceDuration);
+
         checkbox.checked = !checkbox.checked;
         card.classList.toggle('selected', checkbox.checked);
 
-        updatePriceCalculation();
+        if (checkbox.checked) {
+            selectedServices.push({
+                id: serviceId,
+                name: serviceName,
+                price: servicePrice,
+                duration: serviceDuration
+            });
+        } else {
+            selectedServices = selectedServices.filter(s => s.id !== serviceId);
+        }
+
+        updateSummary();
     }
 
-    // Preisberechnung aktualisieren
-    function updatePriceCalculation() {
-        const selectedServices = document.querySelectorAll('.service-card.selected');
-        let servicesTotal = 0;
-        let totalDuration = 0;
+    function updateSummary() {
+        const summarySection = document.getElementById('selected-services-summary');
+        const continueBtn = document.getElementById('continue-btn');
+        const servicesList = document.getElementById('selected-services-list');
 
-        selectedServices.forEach(card => {
-            const price = parseFloat(card.dataset.servicePrice);
-            const duration = parseInt(card.dataset.serviceDuration);
-            servicesTotal += price;
-            totalDuration += duration;
-        });
+        if (selectedServices.length === 0) {
+            summarySection.style.display = 'none';
+            continueBtn.disabled = true;
 
-        // Anfahrtskosten berechnen
+            // Update Anfahrtskosten-Info
+            document.getElementById('travel-cost-display').textContent = 'Werden berechnet...';
+            document.getElementById('travel-cost-details').textContent = 'Wählen Sie Leistungen aus';
+            return;
+        }
+
+        summarySection.style.display = 'block';
+        continueBtn.disabled = false;
+
+        // Services-Liste
+        servicesList.innerHTML = selectedServices.map(service => `
+        <div class="summary-item">
+            <span class="summary-label">${service.name}</span>
+            <span class="summary-value">${service.price.toFixed(2).replace('.', ',')} €</span>
+        </div>
+    `).join('');
+
+        // Berechnungen
+        const servicesTotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
+        const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+
+        // Anfahrtskosten-Logik
         let travelCost = 0;
-        let travelMessage = '';
-        let validationMessage = '';
-        let validationIcon = '';
-        let validationColor = '';
-        let canContinue = true;
+        let travelCostDetails = '';
 
-        if (servicesTotal >= travelConfig.minServiceAmount) {
-            // Leistungen >= 59.90€: Normale Berechnung
-            if (travelConfig.distance <= travelConfig.maxDistanceLarge) {
-                if (travelConfig.distance > travelConfig.freeKm) {
-                    const chargeableDistance = travelConfig.distance - travelConfig.freeKm;
-                    travelCost = chargeableDistance * travelConfig.costPerKm;
-                    travelMessage = `${travelConfig.distance.toFixed(1)} km - ${travelConfig.freeKm} km gratis = ${chargeableDistance.toFixed(1)} km × ${travelConfig.costPerKm.toFixed(2)}€`;
-                } else {
-                    travelMessage = `Kostenlos (unter ${travelConfig.freeKm} km)`;
-                }
-                validationIcon = '✅';
-                validationMessage = 'Ihre Adresse liegt in unserem Servicegebiet.';
-                validationColor = '#28a745';
-            } else {
-                // Entfernung zu groß
-                validationIcon = '❌';
-                validationMessage = `Bei Leistungen ab ${travelConfig.minServiceAmount.toFixed(2)}€ beträgt die maximale Entfernung ${travelConfig.maxDistanceLarge} km. Ihre Entfernung: ${travelConfig.distance.toFixed(1)} km.`;
-                validationColor = '#dc3545';
-                canContinue = false;
-            }
-        } else if (servicesTotal > 0) {
-            // Leistungen < 59.90€: Anfahrt gratis bis 10km
-            if (travelConfig.distance <= travelConfig.maxDistanceSmall) {
-                travelMessage = 'Kostenlos bei Leistungen unter ' + travelConfig.minServiceAmount.toFixed(2) + '€';
-                validationIcon = '✅';
-                validationMessage = 'Anfahrt ist bei dieser Leistungssumme kostenlos.';
-                validationColor = '#28a745';
-            } else {
-                // Entfernung zu groß für kleine Leistungssumme
-                validationIcon = '⚠️';
-                validationMessage = `Bei Leistungen unter ${travelConfig.minServiceAmount.toFixed(2)}€ beträgt die maximale Entfernung ${travelConfig.maxDistanceSmall} km. ` +
-                    `Ihre Entfernung: ${travelConfig.distance.toFixed(1)} km. ` +
-                    `Bitte wählen Sie zusätzliche Leistungen (Gesamtsumme mind. ${travelConfig.minServiceAmount.toFixed(2)}€).`;
-                validationColor = '#ffc107';
-                canContinue = false;
-            }
+        if (customerDistance <= 5) {
+            travelCost = 0;
+            travelCostDetails = 'Kostenlos (bis 5 km)';
+        } else if (servicesTotal >= 100 && customerDistance <= 15) {
+            travelCost = 0;
+            travelCostDetails = 'Kostenlos (ab 100€ bis 15 km)';
+        } else if (customerDistance <= 30) {
+            travelCost = customerDistance * 1.50;
+            travelCostDetails = `${customerDistance.toFixed(1)} km × 1,50 €/km`;
         } else {
-            // Keine Leistungen ausgewählt
-            travelMessage = 'Wählen Sie Leistungen aus';
-            canContinue = false;
+            travelCost = 30 * 1.50 + (customerDistance - 30) * 2.00;
+            travelCostDetails = `Basis: 45€ + ${(customerDistance - 30).toFixed(1)} km × 2,00 €/km`;
         }
 
-        // UI aktualisieren
-        document.getElementById('services-total').textContent = servicesTotal.toFixed(2).replace('.', ',') + ' €';
-        document.getElementById('travel-total').textContent = travelCost.toFixed(2).replace('.', ',') + ' €';
-        document.getElementById('total-price').textContent = (servicesTotal + travelCost).toFixed(2).replace('.', ',') + ' €';
+        const totalPrice = servicesTotal + travelCost;
 
-        // Anfahrtskosten-Details
+        // Update Display
+        document.getElementById('services-subtotal').textContent = servicesTotal.toFixed(2).replace('.', ',') + ' €';
+        document.getElementById('travel-cost-summary').textContent = travelCost.toFixed(2).replace('.', ',') + ' €';
+        document.getElementById('total-price').textContent = totalPrice.toFixed(2).replace('.', ',') + ' €';
+
+        // Update Anfahrtskosten-Info
         document.getElementById('travel-cost-display').textContent = travelCost.toFixed(2).replace('.', ',') + ' €';
-        document.getElementById('travel-cost-details').textContent = travelMessage;
-
-        // Validierungsnachricht
-        const validationDiv = document.getElementById('distance-validation-message');
-        if (validationMessage) {
-            validationDiv.style.display = 'block';
-            validationDiv.style.backgroundColor = validationColor + '20';
-            validationDiv.style.border = '1px solid ' + validationColor;
-            document.getElementById('validation-icon').textContent = validationIcon + ' ';
-            document.getElementById('validation-text').textContent = validationMessage;
-        } else {
-            validationDiv.style.display = 'none';
-        }
-
-        // Continue-Button aktivieren/deaktivieren
-        document.getElementById('continue-btn').disabled = !canContinue || servicesTotal === 0;
+        document.getElementById('travel-cost-details').textContent = travelCostDetails;
     }
 
-    // Keyboard-Support für Service-Cards
+    // Keyboard support
     document.querySelectorAll('.service-card').forEach(card => {
         card.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -215,47 +183,23 @@ $customerDistance = $_SESSION['booking']['distance'] ?? 0;
         });
     });
 
-    // Initial Check für vorausgewählte Services
+    // Initial check for pre-selected services
     document.addEventListener('DOMContentLoaded', function() {
-        <?php if (!empty($_SESSION['booking']['services'])): ?>
-            <?php foreach ($_SESSION['booking']['services'] as $serviceId): ?>
-                const card = document.querySelector(`[data-service-id="${<?= $serviceId ?>}"]`);
-                if (card) {
-                    card.classList.add('selected');
-                    card.querySelector('input[type="checkbox"]').checked = true;
-                }
-            <?php endforeach; ?>
-            updatePriceCalculation();
-        <?php endif; ?>
-    });
+        document.querySelectorAll('.service-card input:checked').forEach(checkbox => {
+            const card = checkbox.closest('.service-card');
+            card.classList.add('selected');
+            const serviceId = card.dataset.serviceId;
+            const serviceName = card.dataset.serviceName;
+            const servicePrice = parseFloat(card.dataset.servicePrice);
+            const serviceDuration = parseInt(card.dataset.serviceDuration);
 
-    // Form-Validierung
-    document.getElementById('services-form').addEventListener('submit', function(e) {
-        const selectedServices = document.querySelectorAll('.service-card.selected');
-        if (selectedServices.length === 0) {
-            e.preventDefault();
-            alert('Bitte wählen Sie mindestens eine Leistung aus.');
-            return false;
-        }
-
-        // Prüfe nochmal die Entfernungsvalidierung
-        let servicesTotal = 0;
-        selectedServices.forEach(card => {
-            servicesTotal += parseFloat(card.dataset.servicePrice);
+            selectedServices.push({
+                id: serviceId,
+                name: serviceName,
+                price: servicePrice,
+                duration: serviceDuration
+            });
         });
-
-        if (servicesTotal < travelConfig.minServiceAmount && travelConfig.distance > travelConfig.maxDistanceSmall) {
-            e.preventDefault();
-            alert(`Bei einer Leistungssumme unter ${travelConfig.minServiceAmount.toFixed(2)}€ ist die maximale Entfernung ${travelConfig.maxDistanceSmall} km. ` +
-                `Bitte wählen Sie zusätzliche Leistungen oder kontaktieren Sie uns direkt.`);
-            return false;
-        }
-
-        if (servicesTotal >= travelConfig.minServiceAmount && travelConfig.distance > travelConfig.maxDistanceLarge) {
-            e.preventDefault();
-            alert(`Die maximale Entfernung für Buchungen beträgt ${travelConfig.maxDistanceLarge} km. ` +
-                `Bitte kontaktieren Sie uns direkt für Ihre Anfrage.`);
-            return false;
-        }
+        updateSummary();
     });
 </script>

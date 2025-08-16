@@ -185,12 +185,21 @@ class Database
 
             if ($count == 0) {
                 $services = [
-                    ['Fahrzeugwäsche Außen', 'Gründliche Außenreinigung Ihres Fahrzeugs mit Hochdruckreiniger und Autoshampoo', 25.00, 45],
-                    ['Fahrzeugwäsche Komplett', 'Komplette Außen- und Innenreinigung für perfekte Sauberkeit', 45.00, 90],
-                    ['Polsterreinigung', 'Professionelle Tiefenreinigung der Fahrzeugsitze und Polster', 35.00, 60],
-                    ['Motorwäsche', 'Schonende Motorraumreinigung mit speziellen Reinigungsmitteln', 30.00, 30],
-                    ['Felgenreinigung', 'Intensive Reinigung und Pflege von Felgen und Reifen', 20.00, 30],
-                    ['Lackpflege Premium', 'Professionelle Lackversiegelung und Politur für langanhaltenden Glanz', 60.00, 120]
+                    ['Sorglos-Paket', 'Check + Pflege in einem Termin: Dein Auto wirdtechnisch geprüft und außen frisch gewaschen –perfekt, wenn du es einfach sorglos willst.', 119.00, 45],
+                    ['Verkaufsklar-Paket', 'Auto verkaufen? Ich mache dein Fahrzeug sauber, fotografiere es und erstelle ein Profi-Inserat – so verkaufst du schneller und besser', 159.90, 90],
+                    ['Check & Wechsel-Paket', 'Der Saisonklassiker: Räderwechsel vor Ort plus ein Sicherheits-Check – alles in einem Termin.', 89.90, 60],
+                    ['Diagnose Paket', 'Dein Auto zeigt eine Warnlampe oder machtProbleme? Ich lese den Fehlerspeicher aus, prüfe diewichtigsten Punkte und erkläre dir klar, was wirklichlos ist – damit du weißt, woran du bist.', 39.90, 30],
+                    ['Basis Check', 'Dein Auto zeigt eine Warnlampe oder machtProbleme? Ich lese den Fehlerspeicher aus, prüfe diewichtigsten Punkte und erkläre dir klar, was wirklichlos ist – damit du weißt, woran du bist.', 59.90, 30],
+                    ['Komfort Check', 'Der umfassende Check: Zusätzlich zur Basis-Prüfunglese ich Fehler aus, kontrolliere Bremsen, Batterieund Unterboden – perfekt, wenn du sicher unterwegssein willst.', 79.90, 120],
+                    ['Räderwechsel mobil', 'Ich komme zu dir, wechsel deine Räder direkt Vorort und checke Bremsen & Luftdruck gleich mit – kein Werkstatttermin, kein Schleppen.', 39.90, 60],
+                    ['Hilfe beim Fahrzeugkauf', 'Du willst ein Auto kaufen, bist dir aber unsicher? Ich prüfe das Auto gründlich und sage dir ehrlich, ob esden Preis wert ist.', 79.90, 60],
+                    ['Hilfe beim Fahrzeugverkauf', 'Ich mache dein Auto verkaufsfertig: Check, Profi Fotos, Preis-Analyse und ein ansprechender Inserat Text.', 59.90, 60],
+                    ['Wash & Care PaketeAußenpflege Basic', 'Frischer Glanz: Handwäsche, Felgenreinigung, Trocknen.', 89.90, 60],
+                    ['Außen- & Innenpflege Plus', 'Innen & außen sauber: Handwäsche, Innenraumreinigung, Oberflächenpflege.', 149.90, 60],
+                    ['Außen- & Innenpflege Premium', 'Das volle Programm: intensive Pflege inkl. Versiegelung, Polster- & Kunststoffpflege.', 89.90, 60],
+                    ['Batterie-Service', '(zzgl. Batteriepreis)„Batterie schwach? Ich teste, wechsle und programmiere sie – damit dein Auto sofort wieder startet.', 69.90, 60],
+                    ['Scheinwerferaufbereitung', 'Matte Scheinwerfer? Ich schleife, poliere undversiegel sie – für klare Sicht und frische Optik.', 69.90, 60],
+                    ['Ersatzteilbeschaffung', '+ Marge - Kein Lust auf Teile suchen? Ich besorge die passenden Ersatzteile und bringe sie dir – ohne Stress.', 14.90, 60]
                 ];
 
                 $stmt = $this->connection->prepare("INSERT INTO services (name, description, price, duration) VALUES (?, ?, ?, ?)");

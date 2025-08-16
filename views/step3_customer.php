@@ -1,5 +1,6 @@
 <?php
-// views/step3_customer.php - Kundendatenerfassung mit Entfernungsvalidierung
+// views/step3_customer.php - Modernisierte Kundendatenerfassung
+// Die config.php wird bereits in index.php geladen, daher keine erneute Einbindung nötig
 ?>
 
 <h2 class="step-title">Ihre Kontaktdaten</h2>
@@ -9,183 +10,178 @@
     <input type="hidden" name="csrf_token" value="<?= SecurityManager::generateCSRFToken() ?>">
     <?= SecurityManager::generateHoneypot() ?>
 
-    <div class="form-group">
-        <label for="name" class="form-label">Vor- und Nachname *</label>
-        <input type="text" id="name" name="name" class="form-input"
-            value="<?= htmlspecialchars($_SESSION['booking']['customer']['name'] ?? '') ?>"
-            placeholder="Max Mustermann" required maxlength="100">
-    </div>
-
-    <div class="form-group">
-        <label for="email" class="form-label">E-Mail-Adresse *</label>
-        <input type="email" id="email" name="email" class="form-input"
-            value="<?= htmlspecialchars($_SESSION['booking']['customer']['email'] ?? '') ?>"
-            placeholder="max@beispiel.de" required maxlength="255">
-    </div>
-
-    <div class="form-group">
-        <label for="phone" class="form-label">Telefonnummer *</label>
-        <input type="tel" id="phone" name="phone" class="form-input"
-            value="<?= htmlspecialchars($_SESSION['booking']['customer']['phone'] ?? '') ?>"
-            placeholder="+49 123 456789" required maxlength="50">
-    </div>
-
-    <div class="form-group">
-        <label for="address" class="form-label">Adresse für Anfahrt *</label>
-        <input type="text" id="address" name="address" class="form-input"
-            value="<?= htmlspecialchars($_SESSION['booking']['customer']['address'] ?? '') ?>"
-            placeholder="Musterstraße 123, 12345 Musterstadt" required maxlength="300"
-            onblur="calculateDistance()">
-        <small style="color: #ccc; font-size: 14px; margin-top: 5px; display: block;">
-            Vollständige Adresse für die Anfahrtskostenberechnung (max. <?= TRAVEL_ABSOLUTE_MAX_DISTANCE ?> km Entfernung)
-        </small>
-
-        <!-- Entfernungsanzeige -->
-        <div id="distance-info" style="display: none; margin-top: 10px; padding: 15px; background: rgba(255, 107, 53, 0.1); border: 1px solid #ff6b35; border-radius: 8px;">
-            <div id="distance-loading" style="display: none;">
-                <span style="color: #ff6b35;">⏳ Entfernung wird berechnet...</span>
-            </div>
-            <div id="distance-result" style="display: none;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <span>📍 Entfernung:</span>
-                    <strong><span id="distance-value">0</span> km</strong>
-                </div>
-                <div id="distance-warning" style="display: none; color: #ffc107; margin-top: 10px;">
-                    ⚠️ <span id="warning-text"></span>
-                </div>
-                <div id="distance-error" style="display: none; color: #dc3545; margin-top: 10px;">
-                    ❌ <span id="error-text"></span>
-                </div>
-                <div id="distance-ok" style="display: none; color: #28a745; margin-top: 10px;">
-                    ✅ Adresse liegt in unserem Servicegebiet
-                </div>
-            </div>
+    <div class="form-section">
+        <div class="form-group">
+            <label for="name" class="form-label">Vor- und Nachname *</label>
+            <input type="text"
+                id="name"
+                name="name"
+                class="form-input"
+                value="<?= htmlspecialchars($_SESSION['booking']['customer']['name'] ?? '') ?>"
+                placeholder="Max Mustermann"
+                required
+                maxlength="100">
         </div>
 
-        <input type="hidden" id="calculated_distance" name="calculated_distance" value="<?= $_SESSION['booking']['distance'] ?? 0 ?>">
+        <div class="form-group">
+            <label for="email" class="form-label">E-Mail-Adresse *</label>
+            <input type="email"
+                id="email"
+                name="email"
+                class="form-input"
+                value="<?= htmlspecialchars($_SESSION['booking']['customer']['email'] ?? '') ?>"
+                placeholder="max@beispiel.de"
+                required
+                maxlength="255">
+        </div>
+
+        <div class="form-group">
+            <label for="phone" class="form-label">Telefonnummer *</label>
+            <input type="tel"
+                id="phone"
+                name="phone"
+                class="form-input"
+                value="<?= htmlspecialchars($_SESSION['booking']['customer']['phone'] ?? '') ?>"
+                placeholder="+49 123 456789"
+                required
+                maxlength="50">
+        </div>
+
+        <div class="form-group">
+            <label for="address" class="form-label">Adresse für Anfahrt *</label>
+            <input type="text"
+                id="address"
+                name="address"
+                class="form-input"
+                value="<?= htmlspecialchars($_SESSION['booking']['customer']['address'] ?? '') ?>"
+                placeholder="Musterstraße 123, 12345 Musterstadt"
+                required
+                maxlength="300"
+                onblur="calculateDistance()">
+            <small class="form-help">
+                Vollständige Adresse für die Anfahrtskostenberechnung (max. <?= defined('TRAVEL_ABSOLUTE_MAX_DISTANCE') ? TRAVEL_ABSOLUTE_MAX_DISTANCE : 35 ?> km von <?= defined('BUSINESS_LOCATION') ? BUSINESS_LOCATION : 'Herne' ?>)
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="notes" class="form-label">Zusätzliche Hinweise (optional)</label>
+            <textarea id="notes"
+                name="notes"
+                class="form-input"
+                rows="3"
+                placeholder="z.B. Hinterhof, 2. Stock, besondere Parkplatzsituation..."
+                maxlength="500"><?= htmlspecialchars($_SESSION['booking']['customer']['notes'] ?? '') ?></textarea>
+        </div>
     </div>
 
-    <div class="form-group" style="grid-column: 1 / -1;">
-        <label for="notes" class="form-label">Anmerkungen (optional)</label>
-        <textarea id="notes" name="notes" class="form-input" rows="3"
-            placeholder="Besondere Wünsche, Zufahrthinweise, etc." maxlength="500"><?= htmlspecialchars($_SESSION['booking']['customer']['notes'] ?? '') ?></textarea>
+    <!-- Entfernungsanzeige -->
+    <div class="distance-info" id="distance-display" style="display: none;">
+        <h4>📍 Entfernungsberechnung</h4>
+        <div class="distance-grid">
+            <div>
+                <strong>Ihre Adresse:</strong><br>
+                <span id="calculated-address">-</span>
+            </div>
+            <div>
+                <strong>Entfernung:</strong><br>
+                <span id="calculated-distance" class="distance-value">Wird berechnet...</span>
+            </div>
+        </div>
+        <div id="distance-error" class="form-error" style="display: none; margin-top: 10px;"></div>
     </div>
 
-    <div class="form-group" style="grid-column: 1 / -1;">
-        <label class="checkbox-container">
-            <input type="checkbox" id="privacy" name="privacy" required>
-            <span class="checkmark"></span>
-            Ich stimme der <a href="#" target="_blank" style="color: #ff6b35;">Datenschutzerklärung</a> zu und bin mit der Verarbeitung meiner Daten einverstanden. *
-        </label>
-    </div>
-
-    <!-- Informationsbox über Anfahrtskosten -->
-    <div style="background: rgba(30, 30, 30, 0.9); border: 1px solid #4e4e4e; border-radius: 8px; padding: 20px; margin: 20px 0; grid-column: 1 / -1;">
-        <h4 style="color: #ff6b35; margin-bottom: 15px;">💡 Information zu Anfahrtskosten</h4>
-        <ul style="margin: 0; padding-left: 20px; color: #ccc;">
-            <li style="margin-bottom: 8px;">
-                <strong>Leistungen unter <?= number_format(TRAVEL_MIN_SERVICE_AMOUNT, 2) ?>€:</strong>
-                Kostenlose Anfahrt bis <?= TRAVEL_MAX_DISTANCE_SMALL ?> km
-            </li>
-            <li style="margin-bottom: 8px;">
-                <strong>Leistungen ab <?= number_format(TRAVEL_MIN_SERVICE_AMOUNT, 2) ?>€:</strong>
-                Die ersten <?= TRAVEL_FREE_KM ?> km sind kostenlos, danach <?= number_format(TRAVEL_COST_PER_KM, 2) ?>€ pro km (max. <?= TRAVEL_MAX_DISTANCE_LARGE ?> km)
-            </li>
-            <li>
-                <strong>Maximale Entfernung:</strong> <?= TRAVEL_ABSOLUTE_MAX_DISTANCE ?> km
-            </li>
-        </ul>
-    </div>
-
-    <div class="btn-group" style="grid-column: 1 / -1;">
-        <a href="?step=2" class="btn-secondary">Zurück</a>
-        <button type="submit" class="btn-primary" id="submit-customer-data">Weiter zu den Leistungen</button>
+    <div class="btn-group">
+        <a href="?step=2" class="btn-secondary">Zurück zur Zeitauswahl</a>
+        <button type="submit" class="btn-primary" id="continue-btn">Weiter zu den Leistungen</button>
     </div>
 </form>
 
+<style>
+    .customer-form {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-section {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--clr-surface-a30);
+        border-radius: var(--radius-sm);
+        padding: 30px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+    }
+
+    .form-help {
+        display: block;
+        color: var(--clr-primary-a50);
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .distance-value {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--clr-warning);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--clr-primary-a0);
+        background: rgba(0, 0, 0, 0.7);
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    .form-input.error {
+        border-color: var(--clr-error);
+        background: rgba(244, 67, 54, 0.05);
+    }
+
+    .form-input.success {
+        border-color: var(--clr-success);
+        background: rgba(76, 175, 80, 0.05);
+    }
+
+    textarea.form-input {
+        resize: vertical;
+        min-height: 80px;
+    }
+</style>
+
 <script>
-    // Entfernungsberechnung
+    let isCalculating = false;
+    let lastCalculatedAddress = '';
+
     function calculateDistance() {
         const addressInput = document.getElementById('address');
         const address = addressInput.value.trim();
 
-        if (address.length < 10) return;
-
-        // UI-Elemente
-        const distanceInfo = document.getElementById('distance-info');
-        const distanceLoading = document.getElementById('distance-loading');
-        const distanceResult = document.getElementById('distance-result');
-        const distanceValue = document.getElementById('distance-value');
-        const distanceWarning = document.getElementById('distance-warning');
-        const distanceError = document.getElementById('distance-error');
-        const distanceOk = document.getElementById('distance-ok');
-        const warningText = document.getElementById('warning-text');
-        const errorText = document.getElementById('error-text');
-        const calculatedDistance = document.getElementById('calculated_distance');
-        const submitButton = document.getElementById('submit-customer-data');
-
-        // Reset UI
-        distanceInfo.style.display = 'block';
-        distanceLoading.style.display = 'block';
-        distanceResult.style.display = 'none';
-        distanceWarning.style.display = 'none';
-        distanceError.style.display = 'none';
-        distanceOk.style.display = 'none';
-
-        // Google Maps API verfügbar?
-        if (window.GOOGLE_MAPS_API_KEY && window.google && window.google.maps) {
-            const service = new google.maps.DistanceMatrixService();
-            const businessLocation = '<?= BUSINESS_ADDRESS ?>';
-
-            service.getDistanceMatrix({
-                origins: [businessLocation],
-                destinations: [address],
-                travelMode: google.maps.TravelMode.DRIVING,
-                unitSystem: google.maps.UnitSystem.METRIC,
-                avoidHighways: false,
-                avoidTolls: false
-            }, function(response, status) {
-                distanceLoading.style.display = 'none';
-                distanceResult.style.display = 'block';
-
-                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                    const result = response.rows[0].elements[0];
-                    const distanceKm = Math.round(result.distance.value / 1000 * 10) / 10;
-
-                    distanceValue.textContent = distanceKm;
-                    calculatedDistance.value = distanceKm;
-
-                    // Validierung
-                    if (distanceKm > window.TRAVEL_CONFIG.absoluteMaxDistance) {
-                        distanceError.style.display = 'block';
-                        errorText.textContent = `Ihre Adresse liegt außerhalb unseres Servicegebiets (max. ${window.TRAVEL_CONFIG.absoluteMaxDistance} km).`;
-                        submitButton.disabled = true;
-                    } else if (distanceKm > window.TRAVEL_CONFIG.maxDistanceLarge) {
-                        distanceWarning.style.display = 'block';
-                        warningText.textContent = `Diese Entfernung liegt an der Grenze unseres Servicegebiets. Bitte kontaktieren Sie uns zur Bestätigung.`;
-                        submitButton.disabled = false;
-                    } else {
-                        distanceOk.style.display = 'block';
-                        submitButton.disabled = false;
-                    }
-                } else {
-                    // Fallback bei Fehler
-                    fallbackDistanceCalculation(address);
-                }
-            });
-        } else {
-            // Fallback ohne Google Maps
-            fallbackDistanceCalculation(address);
+        if (!address || address === lastCalculatedAddress || isCalculating) {
+            return;
         }
-    }
 
-    // Fallback-Berechnung über Backend
-    function fallbackDistanceCalculation(address) {
-        fetch('/api/distance', {
+        if (address.length < 10) {
+            return;
+        }
+
+        isCalculating = true;
+        lastCalculatedAddress = address;
+
+        const displayDiv = document.getElementById('distance-display');
+        const distanceSpan = document.getElementById('calculated-distance');
+        const addressSpan = document.getElementById('calculated-address');
+        const errorDiv = document.getElementById('distance-error');
+        const continueBtn = document.getElementById('continue-btn');
+
+        displayDiv.style.display = 'block';
+        distanceSpan.innerHTML = '<span class="loading">Berechne Entfernung...</span>';
+        errorDiv.style.display = 'none';
+        addressInput.classList.remove('error', 'success');
+
+        // AJAX-Call zur Entfernungsberechnung
+        fetch('api/distance.php', { // Deine existierende API!
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': window.CSRF_TOKEN
                 },
                 body: JSON.stringify({
                     address: address
@@ -193,77 +189,133 @@
             })
             .then(response => response.json())
             .then(data => {
-                const distanceLoading = document.getElementById('distance-loading');
-                const distanceResult = document.getElementById('distance-result');
-                const distanceValue = document.getElementById('distance-value');
-                const distanceWarning = document.getElementById('distance-warning');
-                const distanceError = document.getElementById('distance-error');
-                const distanceOk = document.getElementById('distance-ok');
-                const warningText = document.getElementById('warning-text');
-                const errorText = document.getElementById('error-text');
-                const calculatedDistance = document.getElementById('calculated_distance');
-                const submitButton = document.getElementById('submit-customer-data');
-
-                distanceLoading.style.display = 'none';
-                distanceResult.style.display = 'block';
-
                 if (data.success) {
-                    const distanceKm = data.distance_km;
-                    distanceValue.textContent = distanceKm;
-                    calculatedDistance.value = distanceKm;
+                    const distance = parseFloat(data.distance_km);
 
-                    if (data.estimated) {
-                        distanceWarning.style.display = 'block';
-                        warningText.textContent = 'Geschätzte Entfernung. Die genaue Entfernung wird bei der Buchungsbestätigung ermittelt.';
-                    }
+                    addressSpan.textContent = address;
+                    distanceSpan.innerHTML = `<strong>${distance.toFixed(1)} km</strong>`;
 
-                    // Validierung
-                    if (distanceKm > window.TRAVEL_CONFIG.absoluteMaxDistance) {
-                        distanceError.style.display = 'block';
-                        errorText.textContent = `Ihre Adresse liegt außerhalb unseres Servicegebiets (max. ${window.TRAVEL_CONFIG.absoluteMaxDistance} km).`;
-                        submitButton.disabled = true;
+                    // Check max distance based on your config
+                    const maxDistanceSmall = <?= defined('TRAVEL_MAX_DISTANCE_SMALL') ? TRAVEL_MAX_DISTANCE_SMALL : 10 ?>;
+                    const maxDistanceLarge = <?= defined('TRAVEL_MAX_DISTANCE_LARGE') ? TRAVEL_MAX_DISTANCE_LARGE : 30 ?>;
+                    const maxDistance = <?= defined('TRAVEL_ABSOLUTE_MAX_DISTANCE') ? TRAVEL_ABSOLUTE_MAX_DISTANCE : 35 ?>;
+
+                    if (distance > maxDistance) {
+                        distanceSpan.innerHTML += ' <span class="text-error">(max. ' + maxDistance + ' km)</span>';
+                        errorDiv.textContent = 'Die Adresse liegt außerhalb unseres Servicegebiets (max. ' + maxDistance + ' km).';
+                        errorDiv.style.display = 'block';
+                        addressInput.classList.add('error');
+                        continueBtn.disabled = true;
                     } else {
-                        distanceOk.style.display = 'block';
-                        submitButton.disabled = false;
+                        addressInput.classList.add('success');
+                        continueBtn.disabled = false;
+
+                        // Zeige Kostenhinweis basierend auf deiner neuen Logik
+                        let costHint = '';
+                        if (distance <= <?= defined('TRAVEL_FREE_KM') ? TRAVEL_FREE_KM : 10 ?>) {
+                            costHint = '<span class="text-success">Erste <?= defined('TRAVEL_FREE_KM') ? TRAVEL_FREE_KM : 10 ?> km kostenlos!</span>';
+                        } else {
+                            costHint = '<span class="text-info">Anfahrt: ' + (distance - <?= defined('TRAVEL_FREE_KM') ? TRAVEL_FREE_KM : 10 ?>).toFixed(1) + ' km × <?= defined('TRAVEL_COST_PER_KM') ? number_format(TRAVEL_COST_PER_KM, 2, ',', '.') : '2,00' ?> €</span>';
+                        }
+                        distanceSpan.innerHTML += '<br>' + costHint;
+
+                        if (data.duration) {
+                            distanceSpan.innerHTML += '<br><small class="text-muted">Fahrzeit: ' + data.duration + '</small>';
+                        }
+
+                        if (data.estimated) {
+                            distanceSpan.innerHTML += '<br><small class="text-warning">⚠ Geschätzte Werte</small>';
+                        }
                     }
-                } else {
-                    // Bei Fehler: Schätzung verwenden
-                    const estimatedDistance = 15; // Standard-Schätzung
-                    distanceValue.textContent = estimatedDistance;
-                    calculatedDistance.value = estimatedDistance;
-                    distanceWarning.style.display = 'block';
-                    warningText.textContent = 'Entfernung konnte nicht automatisch berechnet werden. Wir verwenden eine Schätzung.';
-                    submitButton.disabled = false;
+                } else if (data.error) {
+                    distanceSpan.innerHTML = '<span class="text-error">Berechnung fehlgeschlagen</span>';
+                    errorDiv.textContent = data.error || 'Adresse konnte nicht verifiziert werden.';
+                    errorDiv.style.display = 'block';
+                    addressInput.classList.add('error');
                 }
             })
             .catch(error => {
-                console.error('Fehler bei Entfernungsberechnung:', error);
-                // Fallback: Erlaube Fortfahren mit Schätzung
-                document.getElementById('distance-loading').style.display = 'none';
-                document.getElementById('distance-result').style.display = 'block';
-                document.getElementById('distance-value').textContent = '15';
-                document.getElementById('calculated_distance').value = 15;
-                document.getElementById('distance-warning').style.display = 'block';
-                document.getElementById('warning-text').textContent = 'Entfernung wird manuell berechnet.';
-                document.getElementById('submit-customer-data').disabled = false;
+                console.error('Error:', error);
+                distanceSpan.innerHTML = '<span class="text-error">Fehler bei der Berechnung</span>';
+                errorDiv.textContent = 'Technischer Fehler. Bitte versuchen Sie es später erneut.';
+                errorDiv.style.display = 'block';
+            })
+            .finally(() => {
+                isCalculating = false;
             });
     }
 
-    // Auto-Berechnung bei vorhandener Adresse
-    document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    document.getElementById('customer-form').addEventListener('submit', function(e) {
+        const requiredFields = this.querySelectorAll('[required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('error');
+                isValid = false;
+            } else {
+                field.classList.remove('error');
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Bitte füllen Sie alle Pflichtfelder aus.');
+            return false;
+        }
+
+        // Check if distance was calculated
         const addressInput = document.getElementById('address');
-        if (addressInput && addressInput.value.length > 10) {
-            calculateDistance();
+        if (addressInput.classList.contains('error')) {
+            e.preventDefault();
+            alert('Bitte geben Sie eine gültige Adresse innerhalb unseres Servicegebiets ein.');
+            return false;
         }
     });
 
-    // Form-Validierung
-    document.getElementById('customer-form').addEventListener('submit', function(e) {
-        const distance = parseFloat(document.getElementById('calculated_distance').value);
-        if (distance > window.TRAVEL_CONFIG.absoluteMaxDistance) {
-            e.preventDefault();
-            alert('Ihre Adresse liegt außerhalb unseres Servicegebiets.');
-            return false;
+    // Real-time validation
+    document.querySelectorAll('.form-input[required]').forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                this.classList.remove('error');
+                this.classList.add('success');
+            } else {
+                this.classList.add('error');
+                this.classList.remove('success');
+            }
+        });
+    });
+
+    // Email validation
+    document.getElementById('email').addEventListener('blur', function() {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (emailRegex.test(this.value)) {
+            this.classList.remove('error');
+            this.classList.add('success');
+        } else if (this.value) {
+            this.classList.add('error');
+            this.classList.remove('success');
+        }
+    });
+
+    // Phone validation
+    document.getElementById('phone').addEventListener('blur', function() {
+        const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+        if (phoneRegex.test(this.value) && this.value.length >= 10) {
+            this.classList.remove('error');
+            this.classList.add('success');
+        } else if (this.value) {
+            this.classList.add('error');
+            this.classList.remove('success');
+        }
+    });
+
+    // Check for pre-filled address on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const addressInput = document.getElementById('address');
+        if (addressInput.value && addressInput.value.length > 10) {
+            calculateDistance();
         }
     });
 </script>

@@ -1,16 +1,18 @@
 <?php
-// views/step2_time.php - Uhrzeitauswahl (ohne Service-Abhängigkeit in neuem Flow)
+// views/step2_time.php - Modernisierte Uhrzeitauswahl
 $selectedDate = $_SESSION['booking']['date'] ?? '';
-
-// Im neuen Flow haben wir noch keine Services ausgewählt, also Standard-Dauer
 $requiredDuration = 60; // Standard 1 Stunde
-
-// Hole verfügbare Zeiten für das Datum
 $availableTimes = $bookingManager->getAvailableTimesForDate($selectedDate, $requiredDuration);
+
+// Wochentag ermitteln
+$dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+$dayOfWeek = $dayNames[date('w', strtotime($selectedDate))];
 ?>
 
 <h2 class="step-title">Wählen Sie Ihre Wunschzeit</h2>
-<p class="step-description">Verfügbare Zeiten für den <?= date('d.m.Y', strtotime($selectedDate)) ?></p>
+<p class="step-description">
+    Verfügbare Zeiten für <strong><?= $dayOfWeek ?>, den <?= date('d.m.Y', strtotime($selectedDate)) ?></strong>
+</p>
 
 <?php if (!empty($availableTimes)): ?>
     <form method="POST" action="?step=2" id="time-form">
@@ -34,8 +36,21 @@ $availableTimes = $bookingManager->getAvailableTimesForDate($selectedDate, $requ
             <?php endforeach; ?>
         </div>
 
+        <!-- Ausgewählte Zeit Anzeige -->
+        <div class="summary-section" id="selected-time-display" style="display: none; max-width: 400px; margin: 30px auto;">
+            <div class="summary-title">Ihre Auswahl</div>
+            <div class="summary-item">
+                <span class="summary-label">Datum:</span>
+                <span class="summary-value"><?= $dayOfWeek ?>, <?= date('d.m.Y', strtotime($selectedDate)) ?></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Uhrzeit:</span>
+                <span class="summary-value" id="selected-time-value">-</span>
+            </div>
+        </div>
+
         <div class="btn-group">
-            <a href="?step=1" class="btn-secondary">Zurück</a>
+            <a href="?step=1" class="btn-secondary">Zurück zur Datumsauswahl</a>
             <button type="submit" class="btn-primary" id="continue-btn" disabled>Weiter zu Ihren Daten</button>
         </div>
     </form>
@@ -44,105 +59,75 @@ $availableTimes = $bookingManager->getAvailableTimesForDate($selectedDate, $requ
         // Enable continue button when time is selected
         document.querySelectorAll('input[name="appointment_id"]').forEach(function(radio) {
             radio.addEventListener('change', function() {
-                document.getElementById('continue-btn').disabled = false;
+                const continueBtn = document.getElementById('continue-btn');
+                const selectedDisplay = document.getElementById('selected-time-display');
+                const selectedTimeValue = document.getElementById('selected-time-value');
+
+                continueBtn.disabled = false;
 
                 // Visual feedback
                 document.querySelectorAll('.time-slot').forEach(function(slot) {
                     slot.classList.remove('selected');
                 });
                 this.closest('.time-slot').classList.add('selected');
+
+                // Show selected time
+                const timeValue = this.closest('.time-slot').querySelector('.time-value').textContent;
+                selectedDisplay.style.display = 'block';
+                selectedTimeValue.textContent = timeValue + ' Uhr';
+
+                // Smooth scroll to selection
+                selectedDisplay.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
             });
         });
 
-        // Check if already selected
-        const checkedRadio = document.querySelector('input[name="appointment_id"]:checked');
-        if (checkedRadio) {
-            document.getElementById('continue-btn').disabled = false;
-            checkedRadio.closest('.time-slot').classList.add('selected');
-        }
+        // Check if already selected on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkedRadio = document.querySelector('input[name="appointment_id"]:checked');
+            if (checkedRadio) {
+                checkedRadio.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Keyboard navigation
+        document.querySelectorAll('.time-slot').forEach(function(slot) {
+            slot.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const radio = this.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                }
+            });
+
+            // Make focusable
+            slot.setAttribute('tabindex', '0');
+        });
     </script>
 
 <?php else: ?>
     <div class="no-times-available">
-        <p>😔 Leider sind für dieses Datum keine Termine verfügbar.</p>
-        <p>Bitte wählen Sie ein anderes Datum oder kontaktieren Sie uns direkt.</p>
+        <p><strong>😔 Leider sind für diesen Tag keine Termine verfügbar.</strong></p>
+        <p>Mögliche Gründe:</p>
+        <ul style="text-align: left; display: inline-block;">
+            <li>Alle Termine sind bereits gebucht</li>
+            <li>Es ist ein Sonn- oder Feiertag</li>
+            <li>Der Tag liegt zu weit in der Zukunft</li>
+        </ul>
+        <p style="margin-top: 20px;">
+            <strong>Was können Sie tun?</strong><br>
+            Wählen Sie einen anderen Tag oder kontaktieren Sie uns direkt:
+        </p>
+        <p>
+            <strong>📞 Telefon:</strong> <?= defined('BUSINESS_PHONE') ? BUSINESS_PHONE : '+49 123 456789' ?><br>
+            <strong>📧 E-Mail:</strong> <?= defined('BUSINESS_EMAIL') ? BUSINESS_EMAIL : 'info@mcs-mobile.de' ?>
+        </p>
+
         <div class="btn-group">
-            <a href="?step=1" class="btn-secondary">Zurück zur Datumsauswahl</a>
+            <a href="?step=1" class="btn-secondary">Anderen Tag wählen</a>
         </div>
     </div>
 <?php endif; ?>
-
-<style>
-    .time-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 15px;
-        margin: 30px 0;
-    }
-
-    .time-slot {
-        position: relative;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .time-slot input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-    }
-
-    .time-display {
-        background: rgba(30, 30, 30, 0.9);
-        border: 2px solid #4e4e4e;
-        border-radius: 10px;
-        padding: 20px;
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-
-    .time-slot:hover .time-display {
-        border-color: #ff6b35;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
-    }
-
-    .time-slot.selected .time-display,
-    .time-slot input[type="radio"]:checked+.time-display {
-        background: linear-gradient(135deg, #ff6b35, #ff8c42);
-        border-color: #ff6b35;
-        color: white;
-    }
-
-    .time-value {
-        display: block;
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-
-    .time-label {
-        display: block;
-        font-size: 14px;
-        opacity: 0.8;
-    }
-
-    .no-times-available {
-        background: rgba(255, 193, 7, 0.1);
-        border: 1px solid #ffc107;
-        border-radius: 10px;
-        padding: 40px;
-        text-align: center;
-        color: #ffc107;
-    }
-
-    .no-times-available p {
-        margin: 15px 0;
-        font-size: 18px;
-    }
-
-    @media (max-width: 768px) {
-        .time-grid {
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        }
-    }
-</style>

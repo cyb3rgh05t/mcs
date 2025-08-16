@@ -4,10 +4,11 @@ define('ENVIRONMENT', 'development');
 
 // Business Configuration
 define('BUSINESS_NAME', 'MCS Mobile Car Solutions');
-define('BUSINESS_ADDRESS', 'Hüllerstraße 16, 44649 Herne');
-define('BUSINESS_PHONE', '+49 123 456789');
 define('BUSINESS_EMAIL', 'info@mcs-mobile.de');
-define('BUSINESS_WEBSITE', 'www.mcs-mobile.de');
+define('BUSINESS_PHONE', '+49 123 456789');
+define('BUSINESS_ADDRESS', 'Hüllerstraße 16, 44649 Herne');
+define('BUSINESS_LOCATION', 'Herne');  // NEU: Für Entfernungsberechnung
+define('BUSINESS_COORDINATES', [51.5255222, 7.1426812]); // NEU: Lat/Lng für Herne
 
 // Booking Configuration - NEUE ANFAHRTSKOSTEN-LOGIK
 define('TRAVEL_COST_PER_KM', 2.00); // Erhöht von 0.50 auf 2.00€
