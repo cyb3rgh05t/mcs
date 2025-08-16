@@ -9,8 +9,14 @@ define('BUSINESS_PHONE', '+49 123 456789');
 define('BUSINESS_EMAIL', 'info@mcs-mobile.de');
 define('BUSINESS_WEBSITE', 'www.mcs-mobile.de');
 
-// Booking Configuration
-define('TRAVEL_COST_PER_KM', 0.50);
+// Booking Configuration - NEUE ANFAHRTSKOSTEN-LOGIK
+define('TRAVEL_COST_PER_KM', 2.00); // Erhöht von 0.50 auf 2.00€
+define('TRAVEL_FREE_KM', 10); // Erste 10km sind gratis
+define('TRAVEL_MIN_SERVICE_AMOUNT', 59.90); // Grenze für Anfahrtskosten
+define('TRAVEL_MAX_DISTANCE_SMALL', 10); // Max Entfernung bei < 59.90€
+define('TRAVEL_MAX_DISTANCE_LARGE', 30); // Max Entfernung bei >= 59.90€
+define('TRAVEL_ABSOLUTE_MAX_DISTANCE', 35); // Absolute Obergrenze
+
 define('WORKING_HOURS_START', 8);
 define('WORKING_HOURS_END', 17);
 define('WORKING_DAYS', [1, 2, 3, 4, 5, 6]); // Monday to Saturday
@@ -45,7 +51,7 @@ define('UPLOAD_DIR', __DIR__ . '/../uploads');
 date_default_timezone_set('Europe/Berlin');
 
 // Error Reporting
-if (defined('ENVIRONMENT') && 'ENVIRONMENT' === 'production') {
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'production') {
     error_reporting(0);
     ini_set('display_errors', 0);
     ini_set('log_errors', 1);

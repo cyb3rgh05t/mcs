@@ -1,9 +1,9 @@
 <?php
-// api/distance.php - Professionelle Entfernungsberechnung
+// api/distance.php - Professionelle Entfernungsberechnung mit Google Maps und Fallback
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -27,14 +27,6 @@ try {
     // Load configuration
     require_once '../config/config.php';
     require_once '../classes/SecurityManager.php';
-
-    // Rate limiting
-    $client_ip = SecurityManager::getClientIP();
-    if (!SecurityManager::rateLimitCheck($client_ip, 10, 60)) {
-        http_response_code(429);
-        echo json_encode(['error' => 'Rate limit exceeded. Please try again later.']);
-        exit;
-    }
 
     // Parse JSON input
     $input = json_decode(file_get_contents('php://input'), true);
@@ -64,13 +56,13 @@ try {
     // Log API usage
     SecurityManager::logSecurityEvent('distance_api_request', [
         'address' => substr($address, 0, 50) . '...',
-        'ip' => $client_ip
+        'ip' => SecurityManager::getClientIP()
     ]);
 
     // Check Google Maps API configuration
     $api_key = defined('GOOGLE_MAPS_API_KEY') ? GOOGLE_MAPS_API_KEY : '';
 
-    if (empty($api_key) || $api_key === 'YOUR_GOOGLE_MAPS_API_KEY') {
+    if (empty($api_key) || $api_key === 'YOUR_GOOGLE_MAPS_API_KEY' || strpos($api_key, 'AIza') !== 0) {
         // Fallback to estimation
         $estimated_distance = estimateDistanceFromAddress($address);
 
@@ -78,7 +70,7 @@ try {
             'success' => true,
             'distance_km' => $estimated_distance,
             'duration' => calculateEstimatedDuration($estimated_distance),
-            'travel_cost' => round($estimated_distance * (defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50), 2),
+            'travel_cost' => calculateTravelCostWithNewLogic($estimated_distance, 0),
             'estimated' => true,
             'method' => 'fallback_estimation',
             'message' => 'Geschätzte Entfernung (Google Maps API nicht konfiguriert)'
@@ -86,8 +78,8 @@ try {
         exit;
     }
 
-    // Business location (configurable)
-    $business_address = defined('BUSINESS_ADDRESS') ? BUSINESS_ADDRESS : 'Herne, Deutschland';
+    // Business location from config
+    $business_address = defined('BUSINESS_ADDRESS') ? BUSINESS_ADDRESS : 'Hüllerstraße 16, 44649 Herne, Deutschland';
 
     // Prepare Google Maps API request
     $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?' . http_build_query([
@@ -137,7 +129,7 @@ try {
     }
 
     // Extract successful result
-    $distance_km = $element['distance']['value'] / 1000;
+    $distance_km = round($element['distance']['value'] / 1000, 1);
     $duration = $element['duration']['text'];
     $duration_seconds = $element['duration']['value'];
 
@@ -147,19 +139,28 @@ try {
         $traffic_duration = $element['duration_in_traffic']['text'];
     }
 
-    $travel_cost = $distance_km * (defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50);
+    // Calculate travel cost with new logic (will be determined by services later)
+    $travel_cost_preview = calculateTravelCostWithNewLogic($distance_km, 0);
 
     // Return successful result
     echo json_encode([
         'success' => true,
-        'distance_km' => round($distance_km, 1),
+        'distance_km' => $distance_km,
         'duration' => $duration,
         'duration_seconds' => $duration_seconds,
         'traffic_duration' => $traffic_duration,
-        'travel_cost' => round($travel_cost, 2),
+        'travel_cost' => $travel_cost_preview,
         'estimated' => false,
         'method' => 'google_maps_api',
-        'business_location' => $business_address
+        'business_location' => $business_address,
+        'config' => [
+            'free_km' => TRAVEL_FREE_KM,
+            'cost_per_km' => TRAVEL_COST_PER_KM,
+            'min_service_amount' => TRAVEL_MIN_SERVICE_AMOUNT,
+            'max_distance_small' => TRAVEL_MAX_DISTANCE_SMALL,
+            'max_distance_large' => TRAVEL_MAX_DISTANCE_LARGE,
+            'absolute_max' => TRAVEL_ABSOLUTE_MAX_DISTANCE
+        ]
     ]);
 } catch (Exception $e) {
     error_log('Distance API Error: ' . $e->getMessage());
@@ -172,7 +173,7 @@ try {
         'success' => true,
         'distance_km' => $estimated,
         'duration' => calculateEstimatedDuration($estimated),
-        'travel_cost' => round($estimated * (defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50), 2),
+        'travel_cost' => calculateTravelCostWithNewLogic($estimated, 0),
         'estimated' => true,
         'method' => 'error_fallback',
         'message' => 'Automatische Berechnung nicht verfügbar - Schätzung verwendet'
@@ -191,7 +192,7 @@ function handleGoogleMapsError($status, $address)
         'MAX_ELEMENTS_EXCEEDED' => 'Zu viele Anfragen an Google Maps',
         'OVER_DAILY_LIMIT' => 'Google Maps Tageslimit überschritten',
         'OVER_QUERY_LIMIT' => 'Google Maps Anfragelimit überschritten',
-        'REQUEST_DENIED' => 'Google Maps Anfrage verweigert',
+        'REQUEST_DENIED' => 'Google Maps Anfrage verweigert - API Key prüfen',
         'UNKNOWN_ERROR' => 'Unbekannter Google Maps Fehler'
     ];
 
@@ -201,7 +202,7 @@ function handleGoogleMapsError($status, $address)
         'success' => true,
         'distance_km' => $estimated,
         'duration' => calculateEstimatedDuration($estimated),
-        'travel_cost' => round($estimated * (defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50), 2),
+        'travel_cost' => calculateTravelCostWithNewLogic($estimated, 0),
         'estimated' => true,
         'method' => 'google_maps_error_fallback',
         'message' => "$message - Schätzung verwendet",
@@ -222,7 +223,7 @@ function handleElementError($status, $address)
                 'success' => true,
                 'distance_km' => $estimated,
                 'duration' => calculateEstimatedDuration($estimated),
-                'travel_cost' => round($estimated * (defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50), 2),
+                'travel_cost' => calculateTravelCostWithNewLogic($estimated, 0),
                 'estimated' => true,
                 'method' => 'address_not_found_fallback',
                 'message' => 'Adresse nicht gefunden - Schätzung verwendet'
@@ -252,7 +253,7 @@ function handleElementError($status, $address)
                 'success' => true,
                 'distance_km' => $estimated,
                 'duration' => calculateEstimatedDuration($estimated),
-                'travel_cost' => round($estimated * (defined('TRAVEL_COST_PER_KM') ? TRAVEL_COST_PER_KM : 0.50), 2),
+                'travel_cost' => calculateTravelCostWithNewLogic($estimated, 0),
                 'estimated' => true,
                 'method' => 'unknown_error_fallback',
                 'message' => "Routenberechnung fehlgeschlagen ($status) - Schätzung verwendet"
@@ -261,22 +262,22 @@ function handleElementError($status, $address)
 }
 
 /**
- * Intelligent distance estimation based on address
+ * Intelligent distance estimation based on address for Herne location
  */
 function estimateDistanceFromAddress($address)
 {
     $address = strtolower($address);
 
-    // Entfernungen von Rheine zu verschiedenen Städten/Regionen
+    // Entfernungen von Herne zu verschiedenen Städten
     $distance_map = [
-        // Direkte Umgebung (Ruhrgebiet)
+        // Direkte Umgebung Herne
         'herne' => 3,
         'bochum' => 8,
         'gelsenkirchen' => 10,
         'recklinghausen' => 12,
         'castrop-rauxel' => 8,
         'wanne-eickel' => 5,
-        'gladbeck' => 12,  // KORRIGIERT: vorher 120km
+        'gladbeck' => 12,
         'bottrop' => 15,
         'herten' => 10,
 
@@ -288,116 +289,23 @@ function estimateDistanceFromAddress($address)
         'duisburg' => 28,
         'mülheim' => 25,
         'hamm' => 35,
-        'unna' => 30,
 
         // Weitere Ruhrgebietsstädte
         'wuppertal' => 35,
         'solingen' => 40,
-        'remscheid' => 45,
-        'hagen' => 30,
-        'iserlohn' => 45,
-        'lüdenscheid' => 50,
-
-        // Düsseldorf & Umgebung
         'düsseldorf' => 45,
-        'neuss' => 40,
-        'krefeld' => 35,
-        'mönchengladbach' => 45,
-        'viersen' => 50,
-
-        // Köln & Umgebung  
         'köln' => 80,
-        'leverkusen' => 55,
-        'bergisch gladbach' => 65,
-        'bonn' => 100,
-        'troisdorf' => 90,
-
-        // Niederrhein
-        'wesel' => 40,
-        'moers' => 30,
-        'dinslaken' => 25,
-        'voerde' => 35,
-        'kleve' => 70,
-
-        // Münsterland (KORRIGIERT)
-        'münster' => 65,
-        'rheine' => 85,  // KORRIGIERT: Rheine ist 85km von Herne
-        'emsdetten' => 95,
-        'steinfurt' => 100,
-        'coesfeld' => 45,
-        'borken' => 50,
-        'ahaus' => 65,
-        'gronau' => 75,
-
-        // Sauerland
-        'arnsberg' => 50,
-        'meschede' => 70,
-        'sundern' => 60,
-        'brilon' => 85,
-        'winterberg' => 100,
-
-        // Ostwestfalen
-        'bielefeld' => 110,
-        'gütersloh' => 100,
-        'paderborn' => 120,
-        'detmold' => 130,
-        'minden' => 120,
-        'herford' => 115,
-
-        // Bergisches Land
-        'siegen' => 90,
-        'gummersbach' => 70,
-        'attendorn' => 75,
-
-        // Aachen Region
-        'aachen' => 120,
-        'düren' => 90,
-        'eschweiler' => 110,
-        'stolberg' => 115,
-
-        // Weitere NRW Städte
-        'koblenz' => 150,
-        'trier' => 200,
-        'mainz' => 180,
-        'wiesbaden' => 180,
-        'frankfurt' => 200,
-
-        // Niedersachsen
-        'osnabrück' => 130,
-        'hannover' => 200,
-        'braunschweig' => 250,
-        'göttingen' => 200,
-        'oldenburg' => 180,
-        'bremen' => 200,
-
-        // Große Städte Deutschland
-        'hamburg' => 320,
-        'berlin' => 500,
-        'münchen' => 600,
-        'stuttgart' => 400,
-        'nürnberg' => 400,
-        'dresden' => 500,
-        'leipzig' => 400,
-        'karlsruhe' => 350,
-        'mannheim' => 320,
-        'augsburg' => 550,
-
-        // Niederlande (von Herne aus)
-        'venlo' => 60,
-        'roermond' => 70,
-        'eindhoven' => 100,
-        'maastricht' => 120,
-        'nijmegen' => 90,
-        'arnhem' => 85,
-        'utrecht' => 150,
-        'amsterdam' => 180,
-        'rotterdam' => 160,
-        'den haag' => 170,
-        'groningen' => 220,
-        'enschede' => 100,
     ];
 
-    // PLZ-basierte Schätzung (angepasst für Herne als Zentrum)
+    // Check for known cities
+    foreach ($distance_map as $city => $distance) {
+        if (strpos($address, $city) !== false) {
+            // Add some randomness for realism
+            return $distance + rand(-2, 3);
+        }
+    }
+
+    // PLZ-based estimation for Herne region (446xx, 447xx)
     if (preg_match('/\b(446\d{2}|447\d{2})\b/', $address)) {
         return rand(3, 15); // Herne und direkte Umgebung
     }
@@ -407,27 +315,15 @@ function estimateDistanceFromAddress($address)
     }
 
     if (preg_match('/\b(45\d{3}|46\d{3}|47\d{3})\b/', $address)) {
-        return rand(15, 50); // Erweitertes Ruhrgebiet/Niederrhein
+        return rand(15, 50); // Erweitertes Ruhrgebiet
     }
 
     if (preg_match('/\b(40\d{3}|41\d{3}|42\d{3})\b/', $address)) {
         return rand(30, 60); // Düsseldorf/Wuppertal Region
     }
 
-    if (preg_match('/\b(48\d{3}|49\d{3})\b/', $address)) {
-        return rand(50, 120); // Münsterland/Osnabrück
-    }
-
-    if (preg_match('/\b(50\d{3}|51\d{3}|52\d{3}|53\d{3})\b/', $address)) {
-        return rand(60, 150); // Köln/Bonn/Aachen Region
-    }
-
-    if (preg_match('/\b(5[4-9]\d{3})\b/', $address)) {
-        return rand(70, 200); // Südliches NRW/Rheinland-Pfalz
-    }
-
-    // Standard für unbekannte Adressen
-    return 35;
+    // Default for unknown addresses
+    return 15;
 }
 
 /**
@@ -436,14 +332,14 @@ function estimateDistanceFromAddress($address)
 function calculateEstimatedDuration($distance_km)
 {
     if ($distance_km <= 20) {
-        $minutes = $distance_km * 2; // Stadtverkehr
+        $minutes = $distance_km * 2.5; // Stadtverkehr
     } elseif ($distance_km <= 50) {
-        $minutes = $distance_km * 1.5; // Landstraße
+        $minutes = $distance_km * 1.8; // Landstraße
     } else {
-        $minutes = $distance_km * 1.2; // Autobahn
+        $minutes = $distance_km * 1.3; // Autobahn
     }
 
-    $minutes = max(10, round($minutes)); // Minimum 10 Minuten
+    $minutes = max(10, round($minutes));
 
     if ($minutes < 60) {
         return $minutes . ' Min.';
@@ -456,4 +352,14 @@ function calculateEstimatedDuration($distance_km)
             return $hours . ' Std.';
         }
     }
+}
+
+/**
+ * Calculate travel cost with new logic
+ */
+function calculateTravelCostWithNewLogic($distance_km, $services_total)
+{
+    // This is just a preview - actual calculation happens with services
+    // For API response, we return 0 as services are not yet selected
+    return 0;
 }

@@ -146,7 +146,7 @@ if (!$is_logged_in) {
 
 // Admin ist eingeloggt - lade Daten
 $database = new Database();
-$bookingManager = new BookingManager($database);
+$bookingManager = new BookingManager($database); // BookingManager holt sich intern die Connection
 $db = $database->getConnection();
 
 // Handle Admin-Aktionen
@@ -534,7 +534,7 @@ $error_message = isset($_GET['error']) ? 'Ein Fehler ist aufgetreten.' : '';
                                 </td>
                                 <td>
                                     <small><?= htmlspecialchars($booking['services'] ?: 'Keine') ?></small><br>
-                                    <small style="color: #999;"><?= $booking['service_count'] ?> Service(s)</small>
+                                    <small style="color: #999;"><?= isset($booking['service_count']) ? $booking['service_count'] : substr_count($booking['services'], ',') + 1 ?> Service(s)</small>
                                 </td>
                                 <td><strong><?= number_format($booking['total_price'], 2) ?> €</strong></td>
                                 <td>
