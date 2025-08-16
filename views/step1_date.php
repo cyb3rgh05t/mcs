@@ -168,141 +168,160 @@ $availableDates = $bookingManager->getAvailableDates(90);
 </style>
 
 <script>
-    // Verfügbare Termine von PHP
-    const availableDates = <?= json_encode($availableDates) ?>;
-    const workingDays = <?= json_encode(WORKING_DAYS) ?>; // NEU: Arbeitstage aus Config
-    let currentDate = new Date();
-    let selectedDate = null;
+    // WICHTIG: Wir verwenden einen eigenen Namespace um Konflikte zu vermeiden
+    (function() {
+        // Verfügbare Termine von PHP
+        const availableDates = <?= json_encode($availableDates) ?>;
+        const workingDays = <?= json_encode(WORKING_DAYS) ?>;
+        let currentDate = new Date();
+        let selectedDate = null;
 
-    const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
-    ];
-    const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+        const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+        ];
+        const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
-    function renderCalendar() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
 
-        // Update title
-        document.getElementById('calendar-title').textContent = monthNames[month] + ' ' + year;
+            document.getElementById('calendar-title').textContent = monthNames[month] + ' ' + year;
 
-        // First day of month
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
+            const firstDay = new Date(year, month, 1);
+            let startDate = new Date(firstDay);
+            let dayOfWeek = firstDay.getDay();
 
-        // Start from Monday
-        let startDate = new Date(firstDay);
-        const dayOfWeek = firstDay.getDay();
-        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-        startDate.setDate(startDate.getDate() - daysToSubtract);
-
-        const calendarDays = document.getElementById('calendar-days');
-        calendarDays.innerHTML = '';
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // Generate 42 days (6 weeks)
-        for (let i = 0; i < 42; i++) {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + i);
-
-            const dayDiv = document.createElement('div');
-            dayDiv.className = 'calendar-day';
-            dayDiv.textContent = date.getDate();
-
-            const dateStr = date.toISOString().split('T')[0];
-
-            // NEU: Konvertiere JavaScript Wochentag zu ISO Format
-            const jsWeekday = date.getDay(); // 0=So, 1=Mo, 2=Di, 3=Mi, 4=Do, 5=Fr, 6=Sa
-            const isoWeekday = jsWeekday === 0 ? 7 : jsWeekday; // 1=Mo, 2=Di, 3=Mi, 4=Do, 5=Fr, 6=Sa, 7=So
-
-            // Check if date is in current month
-            if (date.getMonth() !== month) {
-                dayDiv.classList.add('other-month');
+            if (dayOfWeek === 0) {
+                startDate.setDate(firstDay.getDate() - 6);
             } else {
-                // Check if today
-                if (date.toDateString() === today.toDateString()) {
-                    dayDiv.classList.add('today');
-                }
-
-                // Check if available
-                if (availableDates.includes(dateStr)) {
-                    dayDiv.classList.add('available');
-                    dayDiv.addEventListener('click', function() {
-                        selectDate(date, dateStr, this);
-                    });
-                    // KORRIGIERT: Prüfe ob vergangen ODER kein Arbeitstag
-                } else if (date < today || !workingDays.includes(isoWeekday)) {
-                    dayDiv.classList.add('disabled');
-                }
+                startDate.setDate(firstDay.getDate() - (dayOfWeek - 1));
             }
 
-            // Check if selected
-            if (selectedDate === dateStr) {
-                dayDiv.classList.add('selected');
-            }
+            const calendarDays = document.getElementById('calendar-days');
+            calendarDays.innerHTML = '';
 
-            calendarDays.appendChild(dayDiv);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.textContent = date.getDate();
+
+                const jsWeekday = date.getDay();
+                const isoWeekday = jsWeekday === 0 ? 7 : jsWeekday;
+
+                if (date.getMonth() !== currentDate.getMonth()) {
+                    dayDiv.classList.add('other-month');
+                } else {
+                    if (date.toDateString() === today.toDateString()) {
+                        dayDiv.classList.add('today');
+                    }
+
+                    if (availableDates.includes(dateStr) && date >= today && workingDays.includes(isoWeekday)) {
+                        dayDiv.classList.add('available');
+                        dayDiv.setAttribute('data-date', dateStr);
+                        dayDiv.setAttribute('data-day-name', dayNames[date.getDay()]);
+                        dayDiv.setAttribute('data-formatted', `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`);
+                    } else if (date < today || !workingDays.includes(isoWeekday)) {
+                        dayDiv.classList.add('disabled');
+                    }
+                }
+
+                if (selectedDate === dateStr) {
+                    dayDiv.classList.add('selected');
+                }
+
+                calendarDays.appendChild(dayDiv);
+            }
         }
-    }
 
-    function selectDate(date, dateStr, element) {
-        // Remove previous selection
-        document.querySelectorAll('.calendar-day').forEach(day => {
-            day.classList.remove('selected');
+        // UMBENANNT: calendarSelectDate statt selectDate
+        function calendarSelectDate(element, dateStr) {
+            if (!element || !element.classList) return;
+
+            if (element.classList.contains('disabled') || element.classList.contains('other-month')) return;
+
+            // Toggle
+            if (element.classList.contains('selected')) {
+                element.classList.remove('selected');
+                selectedDate = null;
+                document.getElementById('selected_date').value = '';
+                document.getElementById('selected-date-display').style.display = 'none';
+                document.getElementById('continue-btn').disabled = true;
+                return;
+            }
+
+            // Remove all previous selections
+            document.querySelectorAll('.calendar-day.selected').forEach(day => {
+                day.classList.remove('selected');
+            });
+
+            element.classList.add('selected');
+            selectedDate = dateStr;
+
+            document.getElementById('selected_date').value = dateStr;
+
+            const displayDiv = document.getElementById('selected-date-display');
+            const displayValue = document.getElementById('selected-date-value');
+
+            const dayName = element.getAttribute('data-day-name');
+            const formattedDate = element.getAttribute('data-formatted');
+
+            displayDiv.style.display = 'block';
+            displayValue.textContent = `${dayName}, ${formattedDate}`;
+
+            document.getElementById('continue-btn').disabled = false;
+
+            displayDiv.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('calendar-days').addEventListener('click', function(e) {
+                let target = e.target;
+
+                if (!target.classList.contains('calendar-day')) {
+                    target = target.closest('.calendar-day');
+                }
+
+                if (target && target.classList.contains('available')) {
+                    const dateStr = target.getAttribute('data-date');
+                    if (dateStr) {
+                        calendarSelectDate(target, dateStr);
+                    }
+                }
+            });
+
+            document.getElementById('prev-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            document.getElementById('next-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            renderCalendar();
+
+            <?php if (isset($_SESSION['booking']['date'])): ?>
+                selectedDate = '<?= $_SESSION['booking']['date'] ?>';
+                const preselectedDate = new Date('<?= $_SESSION['booking']['date'] ?>T00:00:00');
+                currentDate = new Date(preselectedDate.getFullYear(), preselectedDate.getMonth(), 1);
+                renderCalendar();
+            <?php endif; ?>
         });
-
-        // Add selection
-        element.classList.add('selected');
-        selectedDate = dateStr;
-
-        // Update hidden input
-        document.getElementById('selected_date').value = dateStr;
-
-        // Update display
-        const displayDiv = document.getElementById('selected-date-display');
-        const displayValue = document.getElementById('selected-date-value');
-
-        const dayName = dayNames[date.getDay()];
-        const formattedDate = date.toLocaleDateString('de-DE', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-
-        displayDiv.style.display = 'block';
-        displayValue.textContent = `${dayName}, ${formattedDate}`;
-
-        // Enable continue button
-        document.getElementById('continue-btn').disabled = false;
-
-        // Smooth scroll
-        displayDiv.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest'
-        });
-    }
-
-    // Navigation
-    document.getElementById('prev-month').addEventListener('click', function() {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        renderCalendar();
-    });
-
-    document.getElementById('next-month').addEventListener('click', function() {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        renderCalendar();
-    });
-
-    // Initial render
-    renderCalendar();
-
-    // Check for pre-selected date
-    <?php if (isset($_SESSION['booking']['date'])): ?>
-        selectedDate = '<?= $_SESSION['booking']['date'] ?>';
-        const preselectedDate = new Date('<?= $_SESSION['booking']['date'] ?>');
-        currentDate = new Date(preselectedDate.getFullYear(), preselectedDate.getMonth(), 1);
-        renderCalendar();
-    <?php endif; ?>
+    })(); // Sofort ausgeführte Funktion für eigenen Scope
 </script>

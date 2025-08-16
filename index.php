@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             case 5:
                 // Bestätigung
-                if (isset($_POST['terms']) && $_POST['terms'] === 'on') {
+                if (isset($_POST['accept_terms']) && $_POST['accept_terms'] === 'on') {
                     // Nochmalige Validierung aller Daten
                     if (
                         !isset($_SESSION['booking']['appointment_id']) ||
